@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sito Web Squadra di Pallavolo Patrocinio San Giuseppe Torino
 
-## Getting Started
+Sito web ufficiale della squadra di pallavolo - Campionato UISP 4+2 e 3x3
 
-First, run the development server:
+## 🏐 Descrizione
 
+Questo progetto è un sito web moderno e responsive per la gestione delle informazioni della squadra di pallavolo, con sezioni dedicate a notizie, calendario partite, gallery e informazioni sul campionato.
+
+## 🛠️ Tecnologie Utilizzate
+
+- **Next.js 16** (App Router)
+- **TypeScript**
+- **Tailwind CSS v4**
+- **shadcn/ui** - Componenti UI accessibili e personalizzabili
+- **Markdown** per la gestione dei contenuti (Gazzettino)
+- **gray-matter** e **remark** per il parsing dei file markdown
+
+## 📦 Installazione
 ```bash
+# Clona il repository
+git clone [url-repository]
+
+# Entra nella cartella del progetto
+cd pallavolo-sito
+
+# Installa le dipendenze
+npm install
+
+# Avvia il server di sviluppo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Il sito sarà disponibile su `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🗂️ Struttura del Progetto
+```
+pallavolo-sito/
+├── app/                    # Pagine Next.js (App Router)
+├── components/             # Componenti React
+│   ├── ui/                # Componenti shadcn/ui
+│   ├── Navbar.tsx         # Barra di navigazione
+│   └── Footer.tsx         # Footer del sito
+├── content/               # Contenuti in markdown/JSON
+│   ├── gazzettino/       # Articoli del gazzettino (.md)
+│   └── partite/          # Calendario partite (.json)
+├── lib/                   # Utility e funzioni helper
+│   └── markdown.ts       # Funzioni per leggere i markdown
+├── public/               # File statici
+│   └── images/
+│       ├── logos/        # Loghi squadra e sponsor
+│       ├── news/         # Immagini notizie
+│       └── gallery/      # Foto gallery
+└── README.md
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✍️ Gestione Contenuti
 
-## Learn More
+### Aggiungere una nuova notizia
 
-To learn more about Next.js, take a look at the following resources:
+1. Crea un file `.md` in `content/gazzettino/`
+2. Usa questo formato:
+```markdown
+---
+title: "Titolo della notizia"
+date: "YYYY-MM-DD"
+excerpt: "Breve descrizione"
+image: "/images/news/immagine.jpg"
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Contenuto della notizia in markdown...
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Aggiornare le partite
 
-## Deploy on Vercel
+Modifica il file `content/partite/partite-2024-25.json`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🚀 Deploy
+```bash
+# Build per produzione
+npm run build
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Avvia in produzione
+npm start
+```
+
+Il sito può essere facilmente deployato su **Vercel**, **Netlify** o altre piattaforme.
+
+## 📝 TODO
+
+- [ ] Completare pagina "Chi Siamo"
+- [ ] Implementare Gallery con lightbox
+- [ ] Aggiungere classifica campionato
+- [ ] Sistema CMS per aggiornare contenuti senza modificare codice
+
+## 👩‍💻 Sviluppato con
+
+Progetto realizzato come esercizio per imparare lo sviluppo web moderno con Next.js e TypeScript.
+
+## 📄 Licenza
+
+Uso personale
