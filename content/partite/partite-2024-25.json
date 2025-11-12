@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "data": "2024-11-16",
+    "orario": "21:00",
+    "casa": "Nome Tua Squadra",
+    "trasferta": "Team Avversario A",
+    "luogo": "Palestra XYZ",
+    "risultato": null,
+    "campionato": "UISP 4+2"
+  },
+  {
+    "id": 2,
+    "data": "2024-11-23",
+    "orario": "20:30",
+    "casa": "Team Avversario B",
+    "trasferta": "Nome Tua Squadra",
+    "luogo": "Palestra ABC",
+    "risultato": null,
+    "campionato": "UISP 4+2"
+  }
+]
