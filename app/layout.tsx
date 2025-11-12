@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-//import Footer from "@/components/Footer";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "A.S.D. Patrocinio San Giuseppe - Pallavolo UISP 4+2",
+  title: "ASD Patrocinio San Giuseppe - Pallavolo",
   description: "Sito ufficiale della squadra di pallavolo",
 };
 
@@ -21,7 +21,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Navbar />
         {children}
-        {/* <Footer /> */}
+        <Footer />
       </body>
     </html>
   );
