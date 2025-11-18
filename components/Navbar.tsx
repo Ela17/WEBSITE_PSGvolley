@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/chi-siamo', label: 'Chi Siamo' },
-    { href: '/gazzettino', label: 'Gazzettino' },
-    { href: '/gallery', label: 'Gallery' },
-    { href: '/campionato', label: 'Campionato' },
+    { href: "/", label: "Home" },
+    { href: "/chi-siamo", label: "Chi Siamo" },
+    { href: "/gazzettino", label: "Gazzettino" },
+    { href: "/gallery", label: "Gallery" },
+    { href: "/campionato", label: "Campionato" },
   ];
 
   return (
@@ -22,11 +22,14 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo e nome */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition">
-            <Image 
-              src="/images/logos/P.svg" 
-              alt="Logo" 
-              width={150} 
+          <Link
+            href="/"
+            className="flex items-center gap-3 hover:opacity-80 transition"
+          >
+            <Image
+              src="/images/logos/P.svg"
+              alt="Logo"
+              width={150}
               height={50}
               className="object-contain"
             />
