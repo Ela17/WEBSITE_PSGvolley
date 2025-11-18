@@ -26,8 +26,8 @@ export default function Navbar() {
             <Image 
               src="/images/logos/P.svg" 
               alt="Logo" 
-              width={180} 
-              height={60}
+              width={150} 
+              height={50}
               className="object-contain"
             />
           </Link>

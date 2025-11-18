@@ -23,7 +23,7 @@ export default function Home() {
           </div>
           <h1 className="text-5xl font-bold mb-4">Patrocinio San Giuseppe</h1>
           <h2 className="text-3xl font-bold mb-4">Associazione Sportiva Dilettantistica</h2>
-          <p className="text-xl">Campionato UISP 4+2 e 3x3</p>
+          <p className="text-xl">Campionato UISP Volley Misto 4+2 e 3x3</p>
           <p className="text-xl">Stagione 2025/26</p>
         </div>
       </section>
