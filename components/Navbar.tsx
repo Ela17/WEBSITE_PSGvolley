@@ -13,7 +13,7 @@ export default function Navbar() {
     { href: "/", label: "Home" },
     { href: "/chi-siamo", label: "Chi Siamo" },
     { href: "/gazzettino", label: "Gazzettino" },
-    { href: "/gallery", label: "Gallery" },
+    { href: "/eventi", label: "Eventi" },
     { href: "/campionato", label: "Campionato" },
   ];
 
