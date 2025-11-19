@@ -155,9 +155,13 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
     const teamA = match['Squadra A']?.trim();
     const teamB = match['Squadra B']?.trim();
     
+    if (match.SetA_Vinti === '' || match.SetB_Vinti === '') {
+      continue;
+    }
+
     const setA = Number(match.SetA_Vinti);
     const setB = Number(match.SetB_Vinti);
-    
+
     if (isNaN(setA) || isNaN(setB) || !teamA || !teamB || !rankingMap.has(teamA) || !rankingMap.has(teamB)) {
       continue;
     }
