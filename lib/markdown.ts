@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
+import gfm from 'remark-gfm';
 
 const gazzettinoDirectory = path.join(process.cwd(), 'content/gazzettino');
 
@@ -72,7 +73,7 @@ export async function getGazzettinoPostBySlug(slug: string): Promise<GazzettinoP
     const { data, content } = matter(fileContents);
 
     // Converti markdown in HTML
-    const processedContent = await remark().use(html).process(content);
+    const processedContent = await remark().use(gfm).use(html).process(content);
     const contentHtml = processedContent.toString();
 
     return {
