@@ -78,7 +78,7 @@ export default function RankingTable({
                     key={team.squadra}
                     className={cn(
                       isHighlighted &&
-                        "bg-blue-50 dark:bg-blue-950/30 font-medium",
+                        "bg-blue-50 dark:bg-blue-950/30 font-medium"
                     )}
                   >
                     <TableCell className="font-medium text-muted-foreground">
@@ -87,7 +87,6 @@ export default function RankingTable({
                     <TableCell className="font-medium">
                       {team.squadra}
                       {isHighlighted && (
-                        // ✅ OPZIONE 3: Badge Custom Colorato
                         <Badge className="ml-2 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:text-white">
                           PSG
                         </Badge>

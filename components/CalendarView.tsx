@@ -25,15 +25,15 @@ interface CalendarViewProps {
 export default function CalendarView({ events }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null,
+    null
   );
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // ✅ Filtra SOLO partite del PSG
+  // SOLO partite del PSG
   const psgEvents = events.filter(
     (event) =>
       event.squadraA.includes("ASD Patr. San Giuseppe") ||
-      event.squadraB.includes("ASD Patr. San Giuseppe"),
+      event.squadraB.includes("ASD Patr. San Giuseppe")
   );
 
   // Crea mappa date -> eventi PSG
@@ -54,7 +54,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay(); // 0 = Domenica
+  const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // 0 = Lunedì
 
   const monthNames = [
     "Gennaio",
@@ -71,7 +71,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
     "Dicembre",
   ];
 
-  const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  const dayNames = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
   // Handler navigazione mesi
   const goToPreviousMonth = () => {
@@ -186,7 +186,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                     today && "border-primary bg-primary/5",
                     hasEvents &&
                       "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20",
-                    !hasEvents && "border-border hover:bg-muted/50",
+                    !hasEvents && "border-border hover:bg-muted/50"
                   )}
                 >
                   {day && (
@@ -196,7 +196,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                         className={cn(
                           "text-sm font-semibold mb-1",
                           today && "text-primary",
-                          !today && "text-foreground",
+                          !today && "text-foreground"
                         )}
                       >
                         {day}
@@ -211,7 +211,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
 
                             // Determina avversario
                             const opponent = event.squadraA.includes(
-                              "ASD Patr. San Giuseppe",
+                              "ASD Patr. San Giuseppe"
                             )
                               ? event.squadraB
                               : event.squadraA;
@@ -285,8 +285,8 @@ export default function CalendarView({ events }: CalendarViewProps) {
                     className={cn(
                       "font-bold text-lg",
                       selectedEvent.squadraA.includes(
-                        "ASD Patr. San Giuseppe",
-                      ) && "text-primary",
+                        "ASD Patr. San Giuseppe"
+                      ) && "text-primary"
                     )}
                   >
                     {selectedEvent.squadraA}
@@ -298,8 +298,8 @@ export default function CalendarView({ events }: CalendarViewProps) {
                     className={cn(
                       "font-bold text-lg",
                       selectedEvent.squadraB.includes(
-                        "ASD Patr. San Giuseppe",
-                      ) && "text-primary",
+                        "ASD Patr. San Giuseppe"
+                      ) && "text-primary"
                     )}
                   >
                     {selectedEvent.squadraB}

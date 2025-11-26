@@ -10,7 +10,6 @@ import NextMatchCard from "@/components/NextMatchCard";
 export default function Home() {
   const latestPost = getLatestGazzettinoPost();
 
-  // Leggi CSV e calcola prossime partite
   const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
   const openPath = path.join(process.cwd(), "content/campionati/open.csv");
 
