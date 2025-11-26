@@ -1,135 +1,382 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { CalendarEvent, parseItalianDate } from '@/lib/campionato-types';
-import { Calendar, Clock, MapPin } from 'lucide-react';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import {
+  CalendarEvent,
+  parseItalianDate,
+  getCategoriaLabel,
+} from "@/lib/campionato-types";
+import { ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface CalendarViewProps {
   events: CalendarEvent[];
 }
 
 export default function CalendarView({ events }: CalendarViewProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Crea mappa date -> eventi
+  // ✅ Filtra SOLO partite del PSG
+  const psgEvents = events.filter(
+    (event) =>
+      event.squadraA.includes("ASD Patr. San Giuseppe") ||
+      event.squadraB.includes("ASD Patr. San Giuseppe"),
+  );
+
+  // Crea mappa date -> eventi PSG
   const eventsByDate = new Map<string, CalendarEvent[]>();
-  events.forEach(event => {
+  psgEvents.forEach((event) => {
     const date = parseItalianDate(event.data);
-    const dateKey = date.toDateString();
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, []);
     }
     eventsByDate.get(dateKey)!.push(event);
   });
 
-  // Giorni con partite
-  const daysWithMatches = Array.from(eventsByDate.keys()).map(key => new Date(key));
+  // Genera giorni del mese
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  // Handler click giorno
-  const handleDayClick = (date: Date | undefined) => {
-    if (!date) return;
-    
-    setSelectedDate(date);
-    const dateKey = date.toDateString();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Domenica
+
+  const monthNames = [
+    "Gennaio",
+    "Febbraio",
+    "Marzo",
+    "Aprile",
+    "Maggio",
+    "Giugno",
+    "Luglio",
+    "Agosto",
+    "Settembre",
+    "Ottobre",
+    "Novembre",
+    "Dicembre",
+  ];
+
+  const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+  // Handler navigazione mesi
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Genera array di giorni (inclusi padding)
+  const calendarDays = [];
+
+  // Padding iniziale (giorni del mese precedente)
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+
+  // Giorni del mese corrente
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  // Handler click su giorno
+  const handleDayClick = (day: number | null) => {
+    if (!day) return;
+
+    const date = new Date(year, month, day);
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
     const dayEvents = eventsByDate.get(dateKey) || [];
-    
+
     if (dayEvents.length > 0) {
-      setSelectedDayEvents(dayEvents);
+      setSelectedEvent(dayEvents[0]);
       setDialogOpen(true);
     }
   };
 
-  // Modifiers per evidenziare giorni
-  const modifiers = {
-    hasMatch: daysWithMatches,
+  // Check se è oggi
+  const isToday = (day: number | null) => {
+    if (!day) return false;
+    const today = new Date();
+    return (
+      day === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    );
   };
 
-  const modifiersClassNames = {
-    hasMatch: 'bg-blue-100 dark:bg-blue-900 font-bold',
+  // Ottieni eventi per un giorno
+  const getEventsForDay = (day: number | null): CalendarEvent[] => {
+    if (!day) return [];
+    const date = new Date(year, month, day);
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    return eventsByDate.get(dateKey) || [];
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Calendario Partite</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">
+              {monthNames[month]} {year}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={goToToday}>
+                Oggi
+              </Button>
+              <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={goToNextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="flex justify-center">
-          <CalendarComponent
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDayClick}
-            modifiers={modifiers}
-            modifiersClassNames={modifiersClassNames}
-            className="rounded-md border"
-          />
-        </CardContent>
-      </Card>
 
-      {/* Dialog partite del giorno */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              Partite del {selectedDate?.toLocaleDateString('it-IT')}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-            {selectedDayEvents.map(event => {
-              
-              const badgeVariant: 'master' | 'open' = event.categoria === 'master' ? 'master' : 'open';
-              
+        <CardContent>
+          {/* Header giorni settimana */}
+          <div className="grid grid-cols-7 gap-2 mb-2">
+            {dayNames.map((day) => (
+              <div
+                key={day}
+                className="text-center text-sm font-semibold text-muted-foreground p-2"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Griglia calendario */}
+          <div className="grid grid-cols-7 gap-2">
+            {calendarDays.map((day, index) => {
+              const dayEvents = getEventsForDay(day);
+              const hasEvents = dayEvents.length > 0;
+              const today = isToday(day);
+
               return (
-                <Card key={event.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <Badge variant={badgeVariant}>
-                        {event.categoriaOriginale || badgeVariant.toUpperCase()}
-                      </Badge>
-                      {event.ora && <span className="text-sm text-muted-foreground">{event.ora}</span>}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center mb-3">
-                      <div className="flex items-center justify-center gap-3">
-                        <span className="font-bold">{event.squadraA}</span>
-                        <span className="text-muted-foreground">vs</span>
-                        <span className="font-bold">{event.squadraB}</span>
+                <button
+                  key={index}
+                  onClick={() => handleDayClick(day)}
+                  disabled={!day}
+                  className={cn(
+                    "min-h-[100px] p-2 rounded-lg border-2 transition-all text-left",
+                    "hover:shadow-md hover:border-primary/50",
+                    !day && "invisible",
+                    today && "border-primary bg-primary/5",
+                    hasEvents &&
+                      "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20",
+                    !hasEvents && "border-border hover:bg-muted/50",
+                  )}
+                >
+                  {day && (
+                    <>
+                      {/* Numero giorno */}
+                      <div
+                        className={cn(
+                          "text-sm font-semibold mb-1",
+                          today && "text-primary",
+                          !today && "text-foreground",
+                        )}
+                      >
+                        {day}
                       </div>
-                      {event.risultato && (
-                        <div className="mt-2 text-lg font-bold">
-                          {event.risultato.setA} - {event.risultato.setB}
+
+                      {/* Anteprima evento */}
+                      {hasEvents && (
+                        <div className="space-y-1">
+                          {dayEvents.slice(0, 2).map((event) => {
+                            const badgeVariant: "master" | "open" =
+                              event.categoria === "master" ? "master" : "open";
+
+                            // Determina avversario
+                            const opponent = event.squadraA.includes(
+                              "ASD Patr. San Giuseppe",
+                            )
+                              ? event.squadraB
+                              : event.squadraA;
+
+                            return (
+                              <div
+                                key={event.id}
+                                className="text-xs space-y-0.5"
+                              >
+                                <Badge
+                                  variant={badgeVariant}
+                                  className="text-[10px] px-1 py-0"
+                                >
+                                  {getCategoriaLabel(event.categoria)}
+                                </Badge>
+                                <p className="font-semibold truncate">
+                                  vs{" "}
+                                  {opponent
+                                    .replace("ASD ", "")
+                                    .substring(0, 20)}
+                                </p>
+                                {event.ora && (
+                                  <p className="text-muted-foreground flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {event.ora}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {dayEvents.length > 2 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{dayEvents.length - 2} altre
+                            </p>
+                          )}
                         </div>
                       )}
-                    </div>
-                    {event.palestra && (
-                      <p className="text-sm text-muted-foreground">
-                        📍 {event.palestra}
-                      </p>
-                    )}
-                    {event.note && (
-                      <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
-                        ⚠️ {event.note}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                    </>
+                  )}
+                </button>
               );
             })}
           </div>
-        </DialogContent>
+        </CardContent>
+      </Card>
+
+      {/* Dialog dettagli partita */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {selectedEvent && (
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Dettagli Partita</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Badge categoria */}
+              <div>
+                <Badge
+                  variant={
+                    selectedEvent.categoria === "master" ? "master" : "open"
+                  }
+                >
+                  {getCategoriaLabel(selectedEvent.categoria)}
+                </Badge>
+              </div>
+
+              {/* Squadre */}
+              <div className="text-center py-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-center gap-4">
+                  <span
+                    className={cn(
+                      "font-bold text-lg",
+                      selectedEvent.squadraA.includes(
+                        "ASD Patr. San Giuseppe",
+                      ) && "text-primary",
+                    )}
+                  >
+                    {selectedEvent.squadraA}
+                  </span>
+                  <span className="text-2xl font-light text-muted-foreground">
+                    vs
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold text-lg",
+                      selectedEvent.squadraB.includes(
+                        "ASD Patr. San Giuseppe",
+                      ) && "text-primary",
+                    )}
+                  >
+                    {selectedEvent.squadraB}
+                  </span>
+                </div>
+
+                {selectedEvent.risultato && (
+                  <div className="mt-3 text-3xl font-bold">
+                    {selectedEvent.risultato.setA} -{" "}
+                    {selectedEvent.risultato.setB}
+                  </div>
+                )}
+              </div>
+
+              {/* Info partita */}
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Data</p>
+                    <p className="font-semibold">{selectedEvent.data}</p>
+                  </div>
+                </div>
+
+                {selectedEvent.ora && (
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                    <div className="text-sm">
+                      <p className="text-muted-foreground">Orario</p>
+                      <p className="font-semibold">{selectedEvent.ora}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEvent.palestra && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                    <div className="text-sm">
+                      <p className="text-muted-foreground">Palestra</p>
+                      <p className="font-semibold">{selectedEvent.palestra}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEvent.note && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                      Note
+                    </p>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      {selectedEvent.note}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Punteggi set se disponibili */}
+              {selectedEvent.risultato &&
+                selectedEvent.risultato.punteggiSet.length > 0 && (
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-semibold mb-2">Punteggi Set</p>
+                    <div className="space-y-2">
+                      {selectedEvent.risultato.punteggiSet.map((set, idx) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Set {idx + 1}:
+                          </span>
+                          <span className="font-semibold">
+                            {set.ptsA} - {set.ptsB}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   );

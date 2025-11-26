@@ -1,11 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { remark } from 'remark';
-import html from 'remark-html';
-import gfm from 'remark-gfm';
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { remark } from "remark";
+import html from "remark-html";
+import gfm from "remark-gfm";
 
-const gazzettinoDirectory = path.join(process.cwd(), 'content/gazzettino');
+const gazzettinoDirectory = path.join(process.cwd(), "content/gazzettino");
 
 export interface GazzettinoPost {
   slug: string;
@@ -21,7 +21,8 @@ export interface GazzettinoPost {
   content: string;
 }
 
-export interface GazzettinoPostPreview extends Omit<GazzettinoPost, 'content'> {}
+export interface GazzettinoPostPreview
+  extends Omit<GazzettinoPost, "content"> {}
 
 // Legge tutti i post del gazzettino
 export function getAllGazzettinoSlugs(): string[] {
@@ -30,8 +31,8 @@ export function getAllGazzettinoSlugs(): string[] {
   }
   const fileNames = fs.readdirSync(gazzettinoDirectory);
   return fileNames
-    .filter(fileName => fileName.endsWith('.md'))
-    .map(fileName => fileName.replace(/\.md$/, ''));
+    .filter((fileName) => fileName.endsWith(".md"))
+    .map((fileName) => fileName.replace(/\.md$/, ""));
 }
 
 // Ottiene i metadati di tutti i post (senza contenuto)
@@ -42,21 +43,21 @@ export function getAllGazzettinoPostsPreview(): GazzettinoPostPreview[] {
 
   const slugs = getAllGazzettinoSlugs();
   const posts = slugs
-    .map(slug => {
+    .map((slug) => {
       const fullPath = path.join(gazzettinoDirectory, `${slug}.md`);
-      const fileContents = fs.readFileSync(fullPath, 'utf8');
+      const fileContents = fs.readFileSync(fullPath, "utf8");
       const { data } = matter(fileContents);
 
       return {
         slug,
-        title: data.title || '',
-        date: data.date || '',
+        title: data.title || "",
+        date: data.date || "",
         week: data.week || 0,
-        season: data.season || '',
-        excerpt: data.excerpt || '',
-        coverImage: data.coverImage || '',
-        category: data.category || '',
-        author: data.author || '',
+        season: data.season || "",
+        excerpt: data.excerpt || "",
+        coverImage: data.coverImage || "",
+        category: data.category || "",
+        author: data.author || "",
         tags: data.tags || [],
       };
     })
@@ -66,10 +67,12 @@ export function getAllGazzettinoPostsPreview(): GazzettinoPostPreview[] {
 }
 
 // Ottiene un singolo post con contenuto completo
-export async function getGazzettinoPostBySlug(slug: string): Promise<GazzettinoPost | null> {
+export async function getGazzettinoPostBySlug(
+  slug: string,
+): Promise<GazzettinoPost | null> {
   try {
     const fullPath = path.join(gazzettinoDirectory, `${slug}.md`);
-    const fileContents = fs.readFileSync(fullPath, 'utf8');
+    const fileContents = fs.readFileSync(fullPath, "utf8");
     const { data, content } = matter(fileContents);
 
     // Converti markdown in HTML
@@ -78,14 +81,14 @@ export async function getGazzettinoPostBySlug(slug: string): Promise<GazzettinoP
 
     return {
       slug,
-      title: data.title || '',
-      date: data.date || '',
+      title: data.title || "",
+      date: data.date || "",
       week: data.week || 0,
-      season: data.season || '',
-      excerpt: data.excerpt || '',
-      coverImage: data.coverImage || '',
-      category: data.category || '',
-      author: data.author || '',
+      season: data.season || "",
+      excerpt: data.excerpt || "",
+      coverImage: data.coverImage || "",
+      category: data.category || "",
+      author: data.author || "",
       tags: data.tags || [],
       content: contentHtml,
     };

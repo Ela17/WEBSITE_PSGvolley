@@ -1,12 +1,19 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { getAllGazzettinoPostsPreview } from '@/lib/markdown';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Tag } from 'lucide-react';
+import Image from "next/image";
+import Link from "next/link";
+import { getAllGazzettinoPostsPreview } from "@/lib/markdown";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Tag } from "lucide-react";
 
 export default function GazzettinoPage() {
   const posts = getAllGazzettinoPostsPreview();
@@ -36,7 +43,10 @@ export default function GazzettinoPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
-              <Card key={post.slug} className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
+              <Card
+                key={post.slug}
+                className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
+              >
                 {/* Immagine */}
                 {post.coverImage && (
                   <div className="relative h-48 w-full overflow-hidden">
@@ -54,14 +64,16 @@ export default function GazzettinoPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                     <Calendar className="w-4 h-4" />
                     <time dateTime={post.date}>
-                      {format(new Date(post.date), 'dd MMMM yyyy', { locale: it })}
+                      {format(new Date(post.date), "dd MMMM yyyy", {
+                        locale: it,
+                      })}
                     </time>
                   </div>
-                  
+
                   <CardTitle className="text-xl mb-2 line-clamp-2">
                     {post.title}
                   </CardTitle>
-                  
+
                   <div className="flex gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-xs">
                       Settimana {post.week}
@@ -92,7 +104,7 @@ export default function GazzettinoPage() {
                       ))}
                     </div>
                   )}
-                  
+
                   <Link href={`/gazzettino/${post.slug}`} className="w-full">
                     <Button className="w-full bg-blue-600 hover:bg-blue-700">
                       Leggi il numero completo

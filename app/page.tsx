@@ -1,11 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
+import path from "path";
 import { getLatestGazzettinoPost } from "@/lib/markdown";
+import { readCampionatoCSV, getNextMatch } from "@/lib/campionato";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import NextMatchCard from "@/components/NextMatchCard";
 
 export default function Home() {
   const latestPost = getLatestGazzettinoPost();
+
+  // Leggi CSV e calcola prossime partite
+  const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
+  const openPath = path.join(process.cwd(), "content/campionati/open.csv");
+
+  const masterMatches = readCampionatoCSV(masterPath);
+  const openMatches = readCampionatoCSV(openPath);
+
+  const nextMasterMatch = getNextMatch(masterMatches, "ASD Patr. San Giuseppe");
+  const nextOpenMatch = getNextMatch(openMatches, "ASD Patr. San Giuseppe");
 
   return (
     <main className="min-h-screen">
@@ -30,12 +43,12 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 space-y-16">
         {/* Latest News */}
         {latestPost && (
-          <section className="mb-16">
+          <section>
             <h2 className="text-3xl font-bold mb-6">Ultima dal Gazzettino</h2>
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+            <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               {/* {latestPost.image && (
                 <div className="relative h-64">
                   <Image
@@ -47,13 +60,15 @@ export default function Home() {
                 </div>
               )} */}
               <div className="p-6">
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   {format(new Date(latestPost.date), "dd MMMM yyyy", {
                     locale: it,
                   })}
                 </p>
                 <h3 className="text-2xl font-bold mb-3">{latestPost.title}</h3>
-                <p className="text-gray-700 mb-4">{latestPost.excerpt}</p>
+                <p className="text-muted-foreground mb-4">
+                  {latestPost.excerpt}
+                </p>
                 <Link
                   href={`/gazzettino/${latestPost.slug}`}
                   className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
@@ -68,8 +83,17 @@ export default function Home() {
         {/* Prossime Partite */}
         <section>
           <h2 className="text-3xl font-bold mb-6">Prossime Partite</h2>
-          <div className="bg-blue-50 rounded-lg p-6">
-            <p className="text-gray-600">Sezione in arrivo...</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <NextMatchCard
+              match={nextMasterMatch}
+              title="Prossima Partita Master"
+              categoria="master"
+            />
+            <NextMatchCard
+              match={nextOpenMatch}
+              title="Prossima Partita Open"
+              categoria="open"
+            />
           </div>
         </section>
       </div>

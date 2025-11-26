@@ -16,6 +16,7 @@ Questo progetto è un sito web moderno e responsive per la gestione delle inform
 - **gray-matter** e **remark** per il parsing dei file markdown
 
 ## 📦 Installazione
+
 ```bash
 # Clona il repository
 git clone [url-repository]
@@ -33,6 +34,7 @@ npm run dev
 Il sito sarà disponibile su `http://localhost:3000`
 
 ## 🗂️ Struttura del Progetto
+
 ```
 pallavolo-sito/
 ├── app/                    # Pagine Next.js (App Router)
@@ -59,6 +61,7 @@ pallavolo-sito/
 
 1. Crea un file `.md` in `content/gazzettino/`
 2. Usa questo formato:
+
 ```markdown
 ---
 title: "Titolo della notizia"
@@ -75,6 +78,7 @@ Contenuto della notizia in markdown...
 Modifica il file `content/partite/partite-2024-25.json`
 
 ## 🚀 Deploy
+
 ```bash
 # Build per produzione
 npm run build

@@ -6,14 +6,14 @@ CAT,N. Gara,Data,Ora,Squadra A,Separatore,Squadra B,PALESTRA,NOTE,SetA_Vinti,Set
 4+2,730104,gio 05 /02/ 26,ore 21.20,Frassati S.Carlo,-,ASD Patr. San Giuseppe,Palavauda - Viale Europa - Vauda C.se,Ingresso H 20.30,,,,,,,,,,,,
 4+2,730105,mer 04 /02/ 26,ore 21.30,Sinapsi,-,Kolbe GEN-YZ,Pal. Com. - Piazza della Concordia Givoletto TO,Ingresso retro palestra,,,,,,,,,,,,
 
-4+2,730106,mar 18 /11/ 25,ore 21.30,San Luigi Santena,-,Kolbe GEN-YZ,"Pal. Oratorio S.Luigi Santena via Vittorio Veneto 31",Ingresso da via Milite Ignoto,0,3,6,25,13,25,,,,,,
+4+2,730106,mar 18 /11/ 25,ore 21.30,San Luigi Santena,-,Kolbe GEN-YZ,"Pal. Oratorio S.Luigi Santena via Vittorio Veneto 31",Ingresso da via Milite Ignoto,0,3,6,25,16,25,13,25,,,,
 4+2,730107,mar 18 /11/ 25,ore 21.00,ASD Patr. San Giuseppe,-,Sinapsi,"Via Pietro Baiardi 4, Torino",,3,1,25,14,25,20,23,25,25,15,,
-4+2,730108,gio 20 /11/ 25,ore 21.00,ASD Airasca Longobarda,-,Frassati S.Carlo,"Pal. scuola primaria, Via Torino,13 - Castagnole Piemonte",No pubblico,,,,,,,,,,,,
-4+2,730109,mer 19 /11/ 25,ore 21.30,Virtus Gialla,-,Banane Magiche,Via Trieste 1 - Volpiano,,,,,,,,,,,,,
+4+2,730108,gio 20 /11/ 25,ore 21.00,ASD Airasca Longobarda,-,Frassati S.Carlo,"Pal. scuola primaria, Via Torino,13 - Castagnole Piemonte",No pubblico,3,0,25,22,25,19,25,17,,,,
+4+2,730109,mer 19 /11/ 25,ore 21.30,Virtus Gialla,-,Banane Magiche,Via Trieste 1 - Volpiano,,1,3,25,19,22,25,18,25,14,25,,
 4+2,730110,mer 11 /02/ 26,ore 21.00,T.V.M.21 - Schiacciami Ancora,-,Frassati Valle Sauglio,"Scuola Colombo, Piazzetta Jona 4, TO",Max 3 ospiti a squadra,,,,,,,,,,,,
 
 4+2,730111,gio 27 /11/ 25,ore 21.00,Frassati Valle Sauglio,-,San Luigi Santena,"Ist. Flora Manfrinati - Str. Revigliasco, 69 - Moncalieri TO",,,,,,,,,,,,,
-4+2,730112,mar 25 /11/ 25,ore 20.30,Banane Magiche,-,T.V.M.21 - Schiacciami Ancora,"Strada Contessa, 90 Caselette",,,,,,,,,,,,,
+4+2,730112,mar 25 /11/ 25,ore 20.30,Banane Magiche,-,T.V.M.21 - Schiacciami Ancora,"Strada Contessa, 90 Caselette",,3,1,25,23,18,25,25,13,25,22,,
 4+2,730113,gio 19 /02/ 26,ore 21.20,Frassati S.Carlo,-,Virtus Gialla,Palavauda -Viale Europa - Vauda C.se,Ingresso H 20.30,,,,,,,,,,,,
 4+2,730114,mer 26 /11/ 25,ore 21.30,Sinapsi,-,ASD Airasca Longobarda,Pal. Com. - Piazza della Concordia Givoletto TO,Ingresso retro palestra,,,,,,,,,,,,
 4+2,730115,dom 30 /11/ 25,ore 20.45,Kolbe GEN-YZ,-,ASD Patr. San Giuseppe,Palestra Aprica via Bard 39 Torino,,,,,,,,,,,,,
@@ -64,7 +64,7 @@ CAT,N. Gara,Data,Ora,Squadra A,Separatore,Squadra B,PALESTRA,NOTE,SetA_Vinti,Set
 4+2,730152,mer 11 /02/ 26,ore 21.30,Sinapsi,-,ASD Patr. San Giuseppe,Pal. Com. - Piazza della Concordia Givoletto TO ,ingresso retro pal.,,,,,,,,,,,,
 4+2,730153,gio 12 /02/ 26,ore 21.20,Frassati S.Carlo,-,ASD Airasca Longobarda,Palavauda -Viale Europa - Vauda C.se ,ingresso H 20.30,,,,,,,,,,,,
 4+2,730154,mar 10 /02/ 26,ore 20.30,Banane Magiche,-,Virtus Gialla,"Strada Contessa,90 Caselette",,,,,,,,,,,,,
-4+2,730155,gio 20 /11/ 25,ore 21.00,Frassati Valle Sauglio,-,T.V.M.21 - Schiacciami Ancora,"Ist. Flora Manfrinati - Str. Revigliasco, 69 - Moncalieri TO",,,,,,,,,,,,,
+4+2,730155,gio 20 /11/ 25,ore 21.00,Frassati Valle Sauglio,-,T.V.M.21 - Schiacciami Ancora,"Ist. Flora Manfrinati - Str. Revigliasco, 69 - Moncalieri TO",,3,0,25,12,25,17,25,19,,,,
 
 4+2,730156,gio 19 /02/ 26,ore 21.30,San Luigi Santena,-,Frassati Valle Sauglio,"Pal. Oratorio S.Luigi Santena via Vittorio Veneto,31 ",ingresso da via Milite Ignoto,,,,,,,,,,,,
 4+2,730157,mer 18 /02/ 26,ore 21.00,T.V.M.21 - Schiacciami Ancora,-,Banane Magiche,"Scuola Colombo, Piazzetta Jona 4, TO ",Max 3 ospiti a squadra,,,,,,,,,,,,
