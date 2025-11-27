@@ -134,7 +134,7 @@ durata abbastanza, decidendo di decretarne la fine per KO tecnico. Con un gran c
 riesce a mettere al tappeto Majin Bu.
 **SON-GOKU**
 
-#### Isa: 8½
+#### (11) Isa: 8½
 
 Fa giocare tutti i ruoli come una madre amorevole, poi decide di mettersi in proprio dai 9 metri tartassando il
 nastro, trovando anche degli ace. Occorre precisare che "non si chiede scusa" su ace col nastro, se vuoi fare il gentleman
