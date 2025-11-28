@@ -1,21 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getEventoBySlug, getAllEventiFuturi, getAllEventiPassati } from "@/lib/eventi";
+import { getAllEventiFuturi, getAllEventiPassati } from "@/lib/eventi";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  ArrowLeft,
-  Calendar,
-  MapPin,
-  Trophy,
-  Users,
-  PartyPopper,
-  ExternalLink,
-} from "lucide-react";
+import { Calendar, MapPin, Users, Trophy, PartyPopper } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mappa per le icone dei tipi di evento
 const iconMap = {
@@ -41,208 +39,256 @@ const typeLabelMap = {
   altro: "Altro",
 };
 
-// Genera i path statici per tutti gli eventi
-export async function generateStaticParams() {
-  const eventiFuturi = getAllEventiFuturi();
-  const eventiPassati = getAllEventiPassati();
-  
-  const allSlugs = [
-    ...eventiFuturi.map(e => ({ slug: e.slug })),
-    ...eventiPassati.map(e => ({ slug: e.slug }))
-  ];
-  
-  return allSlugs;
-}
-
-export default async function EventoPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  
-  // Prova prima negli eventi futuri, poi in quelli passati
-  let evento = await getEventoBySlug(slug, 'futuro');
-  let isPassato = false;
-  
-  if (!evento) {
-    evento = await getEventoBySlug(slug, 'passato');
-    isPassato = true;
-  }
-
-  if (!evento) {
-    notFound();
-  }
-
-  const Icon = iconMap[evento.type];
-  const badgeColor = badgeColorMap[evento.type];
-  const typeLabel = typeLabelMap[evento.type];
-  const isPastEvent = isPassato || new Date(evento.date) < new Date();
+export default function EventiPage() {
+  const eventiFuturi = getAllEventiFuturi().filter(
+    (e) => e.slug && e.slug !== "undefined" && e.slug !== "null"
+  );
+  const eventiPassati = getAllEventiPassati().filter(
+    (e) => e.slug && e.slug !== "undefined" && e.slug !== "null"
+  );
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header con meta informazioni */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
-          {/* Bottone torna indietro */}
-          <Link href="/eventi">
-            <Button variant="ghost" className="mb-6 hover:bg-blue-50">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Torna agli Eventi
-            </Button>
-          </Link>
-
-          {/* Meta informazioni */}
-          <div className="flex items-center gap-4 flex-wrap mb-4">
-            <Badge className={`${badgeColor} text-white`}>
-              <Icon className="w-4 h-4 mr-2" />
-              {typeLabel}
-            </Badge>
-            {evento.category && (
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {evento.category}
-              </Badge>
-            )}
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl font-bold mb-4">Eventi</h1>
+            <p className="text-xl text-blue-100">
+              Tornei, amichevoli e tutti gli eventi del Patrocinio San Giuseppe
+            </p>
           </div>
+        </div>
+      </section>
 
-          {/* Titolo */}
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {evento.title}
-          </h1>
+      {/* Contenuto */}
+      <div className="container mx-auto px-4 py-12">
+        <Tabs defaultValue="futuri" className="w-full">
+          {/* Tab Navigation */}
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="futuri" className="text-lg">
+              Prossimi Eventi
+            </TabsTrigger>
+            <TabsTrigger value="passati" className="text-lg">
+              Eventi Passati
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Info evento */}
-          <div className="flex flex-col gap-3 text-gray-600">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              <span className="text-lg font-medium">
-                {format(new Date(evento.date), "EEEE dd MMMM yyyy", {
-                  locale: it,
+          {/* Eventi Futuri */}
+          <TabsContent value="futuri">
+            {eventiFuturi.length === 0 ? (
+              <div className="text-center py-20">
+                <Calendar className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  Nessun evento in programma al momento
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {eventiFuturi.map((evento) => {
+                  const Icon = iconMap[evento.type];
+                  const badgeColor = badgeColorMap[evento.type];
+                  const typeLabel = typeLabelMap[evento.type];
+
+                  return (
+                    <Card
+                      key={evento.slug}
+                      className="overflow-hidden hover:shadow-xl transition-shadow"
+                    >
+                      {/* Immagine */}
+                      {evento.coverImage && (
+                        <div className="relative h-48 bg-gray-200">
+                          <Image
+                            src={evento.coverImage}
+                            alt={evento.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <CardHeader>
+                        {/* Badge tipo evento */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={`${badgeColor} text-white`}>
+                            <Icon className="w-3 h-3 mr-1" />
+                            {typeLabel}
+                          </Badge>
+                          {evento.category && (
+                            <Badge variant="outline">{evento.category}</Badge>
+                          )}
+                        </div>
+
+                        <CardTitle className="text-2xl">
+                          {evento.title}
+                        </CardTitle>
+
+                        {/* Data e luogo */}
+                        <CardDescription>
+                          <div className="flex flex-col gap-1 mt-2">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                {format(new Date(evento.date), "dd MMMM yyyy", {
+                                  locale: it,
+                                })}
+                              </span>
+                            </div>
+                            {evento.location && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <MapPin className="w-4 h-4" />
+                                <span>{evento.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <p className="text-gray-700 mb-4">
+                          {evento.description}
+                        </p>
+
+                        {/* Info iscrizione */}
+                        {evento.fee && (
+                          <p className="text-sm text-gray-600 mb-2">
+                            <strong>Quota:</strong> {evento.fee}
+                          </p>
+                        )}
+                        {evento.registrationDeadline && (
+                          <p className="text-sm text-gray-600 mb-4">
+                            <strong>Iscrizioni entro:</strong>{" "}
+                            {format(
+                              new Date(evento.registrationDeadline),
+                              "dd/MM/yyyy",
+                              { locale: it }
+                            )}
+                          </p>
+                        )}
+
+                        {/* Bottoni azione */}
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/eventi/${evento.slug}`}
+                            className="flex-1"
+                          >
+                            <Button variant="default" className="w-full">
+                              Dettagli
+                            </Button>
+                          </Link>
+                          {evento.registrationLink && (
+                            <Link
+                              href={evento.registrationLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1"
+                            >
+                              <Button
+                                variant="outline"
+                                className="w-full bg-green-50 hover:bg-green-100 border-green-500 text-green-700"
+                              >
+                                Iscriviti
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
                 })}
-              </span>
-            </div>
-            {evento.location && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-blue-600" />
-                <span className="text-lg">{evento.location}</span>
               </div>
             )}
-          </div>
+          </TabsContent>
 
-          {/* Info iscrizione per eventi futuri */}
-          {!isPastEvent && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              {evento.fee && (
-                <p className="text-gray-700 mb-2">
-                  <strong>Quota di partecipazione:</strong> {evento.fee}
+          {/* Eventi Passati */}
+          <TabsContent value="passati">
+            {eventiPassati.length === 0 ? (
+              <div className="text-center py-20">
+                <Calendar className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  Nessun evento passato disponibile
                 </p>
-              )}
-              {evento.registrationDeadline && (
-                <p className="text-gray-700 mb-3">
-                  <strong>Iscrizioni entro:</strong>{" "}
-                  {format(new Date(evento.registrationDeadline), "dd MMMM yyyy", {
-                    locale: it,
-                  })}
-                </p>
-              )}
-              {evento.registrationLink && (
-                <Link
-                  href={evento.registrationLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Iscriviti ora
-                  </Button>
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {eventiPassati.map((evento) => {
+                  const Icon = iconMap[evento.type];
+                  const badgeColor = badgeColorMap[evento.type];
+                  const typeLabel = typeLabelMap[evento.type];
 
-      {/* Immagine hero full-width */}
-      {evento.coverImage && (
-        <div className="relative w-full aspect-[16/9] bg-gray-100">
-          <Image
-            src={evento.coverImage}
-            alt={evento.title}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-        </div>
-      )}
-
-      {/* Contenuto principale */}
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-6xl mx-auto">
-          {/* Contenuto evento */}
-          <Card className="mb-8 shadow-lg">
-            <CardContent className="p-6 md:p-8 lg:p-12">
-              <article
-                className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: evento.content }}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Gallery per eventi passati */}
-          {isPastEvent && evento.images && evento.images.length > 0 && (
-            <Card className="mb-8 shadow-lg">
-              <CardContent className="p-6 md:p-8">
-                <h2 className="text-3xl font-bold mb-6 text-blue-600">
-                  Galleria Fotografica
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {evento.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden hover:shadow-xl transition-shadow"
+                  return (
+                    <Card
+                      key={evento.slug}
+                      className="overflow-hidden hover:shadow-xl transition-shadow"
                     >
-                      <Image
-                        src={image}
-                        alt={`Foto ${index + 1} - ${evento.title}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                      {/* Immagine */}
+                      {evento.coverImage && (
+                        <div className="relative h-48 bg-gray-200">
+                          <Image
+                            src={evento.coverImage}
+                            alt={evento.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
 
-          {/* Risultati per eventi passati */}
-          {isPastEvent && evento.results && (
-            <Card className="mb-8 shadow-lg">
-              <CardContent className="p-6 md:p-8">
-                <h2 className="text-3xl font-bold mb-6 text-blue-600">
-                  Risultati
-                </h2>
-                <div
-                  className="prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: evento.results }}
-                />
-              </CardContent>
-            </Card>
-          )}
+                      <CardHeader>
+                        {/* Badge tipo evento */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={`${badgeColor} text-white`}>
+                            <Icon className="w-3 h-3 mr-1" />
+                            {typeLabel}
+                          </Badge>
+                          {evento.category && (
+                            <Badge variant="outline">{evento.category}</Badge>
+                          )}
+                        </div>
 
-          {/* Bottone ritorno */}
-          <div className="flex justify-center">
-            <Link href="/eventi">
-              <Button
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Tutti gli eventi
-              </Button>
-            </Link>
-          </div>
-        </div>
+                        <CardTitle className="text-2xl">
+                          {evento.title}
+                        </CardTitle>
+
+                        {/* Data e luogo */}
+                        <CardDescription>
+                          <div className="flex flex-col gap-1 mt-2">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                {format(new Date(evento.date), "dd MMMM yyyy", {
+                                  locale: it,
+                                })}
+                              </span>
+                            </div>
+                            {evento.location && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <MapPin className="w-4 h-4" />
+                                <span>{evento.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <p className="text-gray-700 mb-4">
+                          {evento.description}
+                        </p>
+
+                        {/* Link dettagli */}
+                        <Link href={`/eventi/${evento.slug}`}>
+                          <Button variant="default" className="w-full">
+                            Vedi resoconto
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
