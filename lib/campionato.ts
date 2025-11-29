@@ -48,7 +48,6 @@ export function getNextMatch(
 
   const upcomingMatches = matches
     .filter((match) => {
-      // ✅ USA parseItalianDate per convertire correttamente le date italiane
       const matchDate = parseItalianDate(match.Data);
       matchDate.setHours(0, 0, 0, 0);
 
@@ -60,7 +59,6 @@ export function getNextMatch(
       return matchDate >= today && isTeamMatch && isNotPlayed;
     })
     .sort((a, b) => {
-      // ✅ USA parseItalianDate anche per il sort
       const dateA = parseItalianDate(a.Data);
       const dateB = parseItalianDate(b.Data);
       return dateA.getTime() - dateB.getTime();
@@ -139,7 +137,6 @@ export function getAllCalendarEvents(): CalendarEvent[] {
   const openEvents = openMatches.map((m) => convertToCalendarEvent(m, "open"));
 
   const allEvents = [...masterEvents, ...openEvents].sort((a, b) => {
-    // ✅ USA parseItalianDate per ordinare correttamente
     const dateA = parseItalianDate(a.data);
     const dateB = parseItalianDate(b.data);
     return dateA.getTime() - dateB.getTime();
