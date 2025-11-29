@@ -12,21 +12,21 @@ export default function ChiSiamoPage() {
           </h1>
 
           {/* Due loghi affiancati */}
-          <div className="flex items-center justify-center gap-12">
+          <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-12">
             <Image
               src="/images/logos/P.svg"
               alt="Logo Polisportiva"
               width={280}
               height={140}
-              className="object-contain"
+              className="object-contain w-32 sm:w-48 md:w-64 h-auto"
             />
-            <div className="w-px h-32 bg-white/50"></div>
+            <div className="w-px h-16 sm:h-24 md:h-32 bg-gray-300"></div>
             <Image
               src="/images/logos/PSG_LOGO.svg"
               alt="Logo 40 anni"
               width={160}
               height={160}
-              className="object-contain"
+              className="object-contain w-20 sm:w-28 md:w-40 h-auto"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function ChiSiamoPage() {
             Contattaci per maggiori informazioni!
           </p>
           <a
-            href="https://www.instagram.com/tua_pagina_ig"
+            href="https://www.instagram.com/asd_patrocinosgiuseppe"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
