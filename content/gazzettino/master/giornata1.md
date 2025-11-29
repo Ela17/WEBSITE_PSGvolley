@@ -4,10 +4,10 @@ date: "2025-11-15"
 week: 1
 season: "2025-26"
 excerpt: "La prima settimana di gare del Campionato Master 4+2 ha visto l'ASD Patrocinio San Giuseppe esordire con una vittoria autoritaria per 3-0 contro il Frassati S. Carlo"
-coverImage: "/images/gazzettino/settimana-1/cover.jpg"
-category: "Campionato"
+coverImage: "/images/gazzettino/master/giornata-1/cover.jpg"
+category: "Campionato Master"
 author: "Redazione a cura di: Fratta, Zucco, Casa, Samu, Ele, Pippo"
-tags: ["vittoria", "debutto", "campionato", "4+2"]
+tags: ["vittoria", "debutto", "4+2"]
 ---
 
 ## Quattro in vetta, PSG saldo al terzo posto

@@ -1,14 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import path from "path";
-import { getLatestGazzettinoPost } from "@/lib/markdown";
+import { getLatestGazzettinoPostBySquadra } from "@/lib/markdown";
 import { readCampionatoCSV, getNextMatch } from "@/lib/campionato";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import NextMatchCard from "@/components/NextMatchCard";
 
 export default function Home() {
-  const latestPost = getLatestGazzettinoPost();
+  const latestMasterPost = getLatestGazzettinoPostBySquadra("MASTER 4+2");
+  const latestOpenPost = getLatestGazzettinoPostBySquadra("OPEN 3×3");
 
   const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
   const openPath = path.join(process.cwd(), "content/campionati/open.csv");
@@ -44,37 +45,80 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-12 space-y-16">
         {/* Latest News */}
-        {latestPost && (
+        {/* Sezione Gazzettino */}
+        {(latestMasterPost || latestOpenPost) && (
           <section>
-            <h2 className="text-3xl font-bold mb-6">Ultima dal Gazzettino</h2>
-            <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              {/* {latestPost.image && (
-                <div className="relative h-64">
-                  <Image
-                    src={latestPost.image}
-                    alt={latestPost.title}
-                    fill
-                    className="object-cover"
-                  />
+            <h2 className="text-3xl font-bold mb-6">Ultime dal Gazzettino</h2>
+            <div
+              className={`grid gap-6 ${
+                latestMasterPost && latestOpenPost
+                  ? "grid-cols-1 md:grid-cols-2"
+                  : "grid-cols-1"
+              }`}
+            >
+              {/* MASTER 4+2 */}
+              {latestMasterPost && (
+                <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
+                        MASTER 4+2
+                      </span>
+                      <p className="text-sm text-muted-foreground">
+                        {format(
+                          new Date(latestMasterPost.date),
+                          "dd MMMM yyyy",
+                          {
+                            locale: it,
+                          }
+                        )}
+                      </p>
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">
+                      {latestMasterPost.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {latestMasterPost.excerpt}
+                    </p>
+                    <Link
+                      href={`/gazzettino/master/${latestMasterPost.slug}`}
+                      className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Leggi tutto
+                    </Link>
+                  </div>
                 </div>
-              )} */}
-              <div className="p-6">
-                <p className="text-sm text-muted-foreground mb-2">
-                  {format(new Date(latestPost.date), "dd MMMM yyyy", {
-                    locale: it,
-                  })}
-                </p>
-                <h3 className="text-2xl font-bold mb-3">{latestPost.title}</h3>
-                <p className="text-muted-foreground mb-4">
-                  {latestPost.excerpt}
-                </p>
-                <Link
-                  href={`/gazzettino/${latestPost.slug}`}
-                  className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
-                >
-                  Leggi tutto
-                </Link>
-              </div>
+              )}
+
+              {/* OPEN 3×3 */}
+              {latestOpenPost && (
+                <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
+                        OPEN 3×3
+                      </span>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(latestOpenPost.date), "dd MMMM yyyy", {
+                          locale: it,
+                        })}
+                      </p>
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">
+                      {latestOpenPost.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {latestOpenPost.excerpt}
+                    </p>
+                    <Link
+                      href={`/gazzettino/open/${latestOpenPost.slug}`}
+                      className="inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
+                    >
+                      Leggi tutto
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
