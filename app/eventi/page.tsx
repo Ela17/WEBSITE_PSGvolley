@@ -65,11 +65,11 @@ export default function EventiPage() {
       <div className="container mx-auto px-4 py-12">
         <Tabs defaultValue="futuri" className="w-full">
           {/* Tab Navigation */}
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
-            <TabsTrigger value="futuri" className="text-lg">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 h-12">
+            <TabsTrigger value="futuri" className="text-lg font-semibold">
               Prossimi Eventi
             </TabsTrigger>
-            <TabsTrigger value="passati" className="text-lg">
+            <TabsTrigger value="passati" className="text-lg font-semibold">
               Eventi Passati
             </TabsTrigger>
           </TabsList>
