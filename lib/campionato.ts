@@ -6,6 +6,7 @@ export type { MatchResult, Ranking, CalendarEvent } from "./campionato-types";
 export { parseItalianDate } from "./campionato-types";
 
 import type { MatchResult, CalendarEvent, Ranking } from "./campionato-types";
+import { parseItalianDate } from "./campionato-types";
 
 /**
  * Normalizza la categoria dal CSV
@@ -31,7 +32,7 @@ export function readCampionatoCSV(filePath: string): MatchResult[] {
   }) as MatchResult[];
 
   return records.filter(
-    (record) => record["Squadra A"] && record["Squadra B"] && record["N. Gara"],
+    (record) => record["Squadra A"] && record["Squadra B"] && record["N. Gara"]
   );
 }
 
@@ -40,15 +41,16 @@ export function readCampionatoCSV(filePath: string): MatchResult[] {
  */
 export function getNextMatch(
   matches: MatchResult[],
-  teamName: string = "ASD Patr. San Giuseppe",
+  teamName: string = "ASD Patr. San Giuseppe"
 ): CalendarEvent | null {
-  // ... resto del codice uguale
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const upcomingMatches = matches
     .filter((match) => {
-      const matchDate = new Date(match.Data);
+      const matchDate = parseItalianDate(match.Data);
+      matchDate.setHours(0, 0, 0, 0);
+
       const isTeamMatch =
         match["Squadra A"]?.includes(teamName) ||
         match["Squadra B"]?.includes(teamName);
@@ -57,8 +59,8 @@ export function getNextMatch(
       return matchDate >= today && isTeamMatch && isNotPlayed;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.Data);
-      const dateB = new Date(b.Data);
+      const dateA = parseItalianDate(a.Data);
+      const dateB = parseItalianDate(b.Data);
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -74,7 +76,7 @@ export function getNextMatch(
  */
 export function convertToCalendarEvent(
   match: MatchResult,
-  categoria: "master" | "open",
+  categoria: "master" | "open"
 ): CalendarEvent {
   const hasResult = match.SetA_Vinti && match.SetB_Vinti;
 
@@ -130,13 +132,13 @@ export function getAllCalendarEvents(): CalendarEvent[] {
   const openMatches = readCampionatoCSV(openPath);
 
   const masterEvents = masterMatches.map((m) =>
-    convertToCalendarEvent(m, "master"),
+    convertToCalendarEvent(m, "master")
   );
   const openEvents = openMatches.map((m) => convertToCalendarEvent(m, "open"));
 
   const allEvents = [...masterEvents, ...openEvents].sort((a, b) => {
-    const dateA = new Date(a.data);
-    const dateB = new Date(b.data);
+    const dateA = parseItalianDate(a.data);
+    const dateB = parseItalianDate(b.data);
     return dateA.getTime() - dateB.getTime();
   });
 
@@ -198,7 +200,7 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
     const updateStats = (
       teamName: string,
       setsWon: number,
-      setsLost: number,
+      setsLost: number
     ) => {
       const stats = rankingMap.get(teamName)!;
       stats.partiteGiocate += 1;
