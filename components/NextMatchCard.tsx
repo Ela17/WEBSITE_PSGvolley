@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getGoogleMapsLink } from "@/lib/calendar-utils";
 
 interface NextMatchCardProps {
   match: CalendarEvent | null;
@@ -39,7 +40,7 @@ export default function NextMatchCard({
     <Card
       className={cn(
         "border-l-4 hover:shadow-lg transition-shadow",
-        borderColor,
+        borderColor
       )}
     >
       <CardHeader className="pb-3">
@@ -54,7 +55,7 @@ export default function NextMatchCard({
       <CardContent className="space-y-4">
         {/* Squadre */}
         <div className="text-center py-3 bg-muted/30 rounded-lg">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
             <span className="font-bold text-base">{match.squadraA}</span>
             <span className="text-xl font-light text-muted-foreground">vs</span>
             <span className="font-bold text-base">{match.squadraB}</span>
@@ -78,7 +79,14 @@ export default function NextMatchCard({
           {match.palestra && (
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm">{match.palestra}</span>
+              <a
+                href={getGoogleMapsLink(match.palestra)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-dotted transition-colors"
+              >
+                {match.palestra}
+              </a>
             </div>
           )}
         </div>
