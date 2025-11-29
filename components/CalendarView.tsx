@@ -6,6 +6,7 @@ import {
   parseItalianDate,
   getCategoriaLabel,
 } from "@/lib/campionato-types";
+import { getGoogleMapsLink } from "@/lib/calendar-utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -234,12 +235,18 @@ export default function CalendarView({ events }: CalendarViewProps) {
                           </span>
                         )}
                         {event.palestra && (
-                          <span className="flex items-center gap-1">
+                          <a
+                            href={getGoogleMapsLink(event.palestra)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
                             <MapPin className="w-4 h-4" />
-                            <span className="truncate">
+                            <span className="truncate underline decoration-dotted">
                               {event.palestra.substring(0, 25)}
                             </span>
-                          </span>
+                          </a>
                         )}
                       </div>
 
@@ -444,9 +451,29 @@ export default function CalendarView({ events }: CalendarViewProps) {
                 {selectedEvent.palestra && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                    <div className="text-sm">
+                    <div className="text-sm flex-1">
                       <p className="text-muted-foreground">Palestra</p>
-                      <p className="font-semibold">{selectedEvent.palestra}</p>
+                      <a
+                        href={getGoogleMapsLink(selectedEvent.palestra)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-dotted transition-colors inline-flex items-center gap-1"
+                      >
+                        {selectedEvent.palestra}
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </a>
                     </div>
                   </div>
                 )}
