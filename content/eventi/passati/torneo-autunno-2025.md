@@ -2,6 +2,7 @@
 title: "Torneo d'Autunno 2025"
 date: "2025-10-15"
 location: "Via Baiardi 4, Torino"
+locationLink: "https://www.google.com/maps/place/Via+Pietro+Baiardi,+4,+10141+Torino+TO"
 description: "Il tradizionale torneo autunnale che apre la stagione. Una giornata di sport, divertimento e amicizia con 8 squadre in gara!"
 coverImage: "/images/eventi/torneo-autunno-2025/cover.jpg"
 type: "torneo"

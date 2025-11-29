@@ -122,7 +122,7 @@ export default async function EventoDetailPage({
             </Link>
 
             {/* Badge tipo evento */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <Badge className={`${badgeColor} text-white`}>
                 <Icon className="w-3 h-3 mr-1" />
                 {typeLabel}
@@ -135,6 +135,17 @@ export default async function EventoDetailPage({
                   {evento.category}
                 </Badge>
               )}
+              {/* Badge Futuro/Passato */}
+              <Badge
+                variant="secondary"
+                className={`${
+                  isPassato
+                    ? "bg-gray-600 hover:bg-gray-700"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white`}
+              >
+                {isPassato ? "Evento Passato" : "Evento Futuro"}
+              </Badge>
             </div>
 
             {/* Titolo con text-shadow per leggibilità */}
@@ -168,10 +179,29 @@ export default async function EventoDetailPage({
                 </span>
               </div>
               {evento.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  <span className="text-lg drop-shadow">{evento.location}</span>
-                </div>
+                <>
+                  {evento.locationLink ? (
+                    <a
+                      href={evento.locationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 hover:text-white transition-colors group"
+                    >
+                      <MapPin className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      <span className="text-lg drop-shadow underline decoration-white/50 group-hover:decoration-white">
+                        {evento.location}
+                      </span>
+                      <ExternalLink className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      <span className="text-lg drop-shadow">
+                        {evento.location}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -2,6 +2,7 @@
 title: "Polentata di Natale 2025"
 date: "2025-12-18"
 location: "Via Baiardi 4, Torino"
+locationLink: "https://www.google.com/maps/place/Via+Pietro+Baiardi,+4,+10141+Torino+TO"
 description: "Evento sociale di Natale con polenta, formaggio, spezzatino, bevande, dolce, tombolata, musica e divertimento!"
 coverImage: "/images/eventi/polentata-natale-2025/cover.jpg"
 type: "evento-sociale"

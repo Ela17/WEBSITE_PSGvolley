@@ -16,6 +16,7 @@ export interface Evento {
   title: string;
   date: string;
   location: string;
+  locationLink?: string; // Link a Google Maps o altra mappa
   description: string;
   coverImage: string;
   type: "torneo" | "amichevole" | "evento-sociale" | "altro";
@@ -78,6 +79,7 @@ export function getAllEventiFuturi(): EventoPreview[] {
           title: data.title || "",
           date: data.date || "",
           location: data.location || "",
+          locationLink: data.locationLink,
           description: data.description || "",
           coverImage: data.coverImage || "",
           type: data.type || "altro",
@@ -118,6 +120,7 @@ export function getAllEventiPassati(): EventoPreview[] {
           title: data.title || "",
           date: data.date || "",
           location: data.location || "",
+          locationLink: data.locationLink,
           description: data.description || "",
           coverImage: data.coverImage || "",
           type: data.type || "altro",
@@ -187,6 +190,7 @@ export async function getEventoBySlug(
       title: data.title || "",
       date: data.date || "",
       location: data.location || "",
+      locationLink: data.locationLink,
       description: data.description || "",
       coverImage: data.coverImage || "",
       type: data.type || "altro",

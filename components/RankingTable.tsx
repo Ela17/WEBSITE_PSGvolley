@@ -47,81 +47,153 @@ export default function RankingTable({
       </CardHeader>
 
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Squadra</TableHead>
-              <TableHead className="text-center">Pt</TableHead>
-              <TableHead className="text-center">PG</TableHead>
-              <TableHead className="text-center">SV</TableHead>
-              <TableHead className="text-center">SP</TableHead>
-              <TableHead className="text-center">QS</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ranking.length === 0 ? (
+        {/* Tabella Mobile - Solo colonne essenziali */}
+        <div className="md:hidden">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center text-muted-foreground"
-                >
-                  Nessun dato disponibile
-                </TableCell>
+                <TableHead className="w-10">#</TableHead>
+                <TableHead>Squadra</TableHead>
+                <TableHead className="text-center w-12">Pt</TableHead>
+                <TableHead className="text-center w-12">PG</TableHead>
               </TableRow>
-            ) : (
-              ranking.map((team, index) => {
-                const isHighlighted = team.squadra.includes(highlightTeam);
-
-                return (
-                  <TableRow
-                    key={team.squadra}
-                    className={cn(
-                      isHighlighted &&
-                        "bg-blue-50 dark:bg-blue-950/30 font-medium"
-                    )}
+            </TableHeader>
+            <TableBody>
+              {ranking.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground"
                   >
-                    <TableCell className="font-medium text-muted-foreground">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {team.squadra}
-                      {isHighlighted && (
-                        <Badge className="ml-2 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:text-white">
-                          PSG
-                        </Badge>
+                    Nessun dato disponibile
+                  </TableCell>
+                </TableRow>
+              ) : (
+                ranking.map((team, index) => {
+                  const isHighlighted = team.squadra.includes(highlightTeam);
+
+                  return (
+                    <TableRow
+                      key={team.squadra}
+                      className={cn(
+                        isHighlighted &&
+                          "bg-blue-50 dark:bg-blue-950/30 font-medium"
                       )}
-                    </TableCell>
-                    <TableCell className="text-center font-bold">
-                      {team.punti}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {team.partiteGiocate}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {team.setVinti}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {team.setPersi}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {team.quozienteSet.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-          <TableCaption>
-            <div className="text-xs text-left space-y-1">
-              <p className="font-semibold">Legenda:</p>
-              <p>
-                Pt = Punti, PG = Partite Giocate, SV = Set Vinti, SP = Set
-                Persi, QS = Quoziente Set
-              </p>
-            </div>
-          </TableCaption>
-        </Table>
+                    >
+                      <TableCell className="font-medium text-muted-foreground text-sm">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="font-medium text-sm">
+                        <div className="flex flex-col gap-0.5">
+                          <span>{team.squadra}</span>
+                          {isHighlighted && (
+                            <Badge className="w-fit text-[10px] px-1.5 py-0 font-bold bg-blue-600 text-white">
+                              PSG
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-sm">
+                        {team.punti}
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-muted-foreground">
+                        {team.partiteGiocate}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+            <TableCaption>
+              <div className="text-xs text-left space-y-1">
+                <p className="font-semibold">Legenda:</p>
+                <p>Pt = Punti, PG = Partite Giocate</p>
+                <p className="text-muted-foreground italic">
+                  Visualizza su desktop per tutte le statistiche
+                </p>
+              </div>
+            </TableCaption>
+          </Table>
+        </div>
+
+        {/* Tabella Desktop - Tutte le colonne */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">#</TableHead>
+                <TableHead>Squadra</TableHead>
+                <TableHead className="text-center">Pt</TableHead>
+                <TableHead className="text-center">PG</TableHead>
+                <TableHead className="text-center">SV</TableHead>
+                <TableHead className="text-center">SP</TableHead>
+                <TableHead className="text-center">QS</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ranking.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-muted-foreground"
+                  >
+                    Nessun dato disponibile
+                  </TableCell>
+                </TableRow>
+              ) : (
+                ranking.map((team, index) => {
+                  const isHighlighted = team.squadra.includes(highlightTeam);
+
+                  return (
+                    <TableRow
+                      key={team.squadra}
+                      className={cn(
+                        isHighlighted &&
+                          "bg-blue-50 dark:bg-blue-950/30 font-medium"
+                      )}
+                    >
+                      <TableCell className="font-medium text-muted-foreground">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {team.squadra}
+                        {isHighlighted && (
+                          <Badge className="ml-2 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:text-white">
+                            PSG
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center font-bold">
+                        {team.punti}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.partiteGiocate}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.setVinti}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.setPersi}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.quozienteSet.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+            <TableCaption>
+              <div className="text-xs text-left space-y-1">
+                <p className="font-semibold">Legenda:</p>
+                <p>
+                  Pt = Punti, PG = Partite Giocate, SV = Set Vinti, SP = Set
+                  Persi, QS = Quoziente Set
+                </p>
+              </div>
+            </TableCaption>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

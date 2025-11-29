@@ -6,7 +6,13 @@ import {
   parseItalianDate,
   getCategoriaLabel,
 } from "@/lib/campionato-types";
-import { ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Calendar,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -132,12 +138,24 @@ export default function CalendarView({ events }: CalendarViewProps) {
     return eventsByDate.get(dateKey) || [];
   };
 
+  // Filtra eventi del mese corrente per la vista lista mobile
+  const monthEvents = psgEvents
+    .filter((event) => {
+      const eventDate = parseItalianDate(event.data);
+      return eventDate.getMonth() === month && eventDate.getFullYear() === year;
+    })
+    .sort((a, b) => {
+      const dateA = parseItalianDate(a.data);
+      const dateB = parseItalianDate(b.data);
+      return dateA.getTime() - dateB.getTime();
+    });
+
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-xl md:text-2xl">
               {monthNames[month]} {year}
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -155,105 +173,195 @@ export default function CalendarView({ events }: CalendarViewProps) {
         </CardHeader>
 
         <CardContent>
-          {/* Header giorni settimana */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {dayNames.map((day) => (
-              <div
-                key={day}
-                className="text-center text-sm font-semibold text-muted-foreground p-2"
-              >
-                {day}
+          {/* VISTA MOBILE - Lista partite */}
+          <div className="md:hidden space-y-3">
+            {monthEvents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Nessuna partita in programma questo mese</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              monthEvents.map((event) => {
+                const opponent = event.squadraA.includes(
+                  "ASD Patr. San Giuseppe"
+                )
+                  ? event.squadraB
+                  : event.squadraA;
+                const eventDate = parseItalianDate(event.data);
+                const isEventToday = isToday(eventDate.getDate());
 
-          {/* Griglia calendario */}
-          <div className="grid grid-cols-7 gap-2">
-            {calendarDays.map((day, index) => {
-              const dayEvents = getEventsForDay(day);
-              const hasEvents = dayEvents.length > 0;
-              const today = isToday(day);
-
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleDayClick(day)}
-                  disabled={!day}
-                  className={cn(
-                    "min-h-[100px] p-2 rounded-lg border-2 transition-all text-left",
-                    "hover:shadow-md hover:border-primary/50",
-                    !day && "invisible",
-                    today && "border-primary bg-primary/5",
-                    hasEvents &&
-                      "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20",
-                    !hasEvents && "border-border hover:bg-muted/50"
-                  )}
-                >
-                  {day && (
-                    <>
-                      {/* Numero giorno */}
-                      <div
-                        className={cn(
-                          "text-sm font-semibold mb-1",
-                          today && "text-primary",
-                          !today && "text-foreground"
-                        )}
-                      >
-                        {day}
+                return (
+                  <button
+                    key={event.id}
+                    onClick={() => {
+                      setSelectedEvent(event);
+                      setDialogOpen(true);
+                    }}
+                    className={cn(
+                      "w-full text-left p-4 rounded-lg border-2 transition-all",
+                      "hover:shadow-md hover:border-primary/50",
+                      isEventToday && "border-primary bg-primary/5",
+                      !isEventToday && "border-border"
+                    )}
+                  >
+                    <div className="space-y-2">
+                      {/* Header con data e badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            {event.data}
+                          </p>
+                          <p className="text-lg font-bold mt-1">
+                            vs {opponent.replace("ASD ", "")}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            event.categoria === "master" ? "master" : "open"
+                          }
+                          className="text-xs"
+                        >
+                          {event.categoria === "master" ? "4+2" : "3×3"}
+                        </Badge>
                       </div>
 
-                      {/* Anteprima evento */}
-                      {hasEvents && (
-                        <div className="space-y-1">
-                          {dayEvents.slice(0, 2).map((event) => {
-                            const badgeVariant: "master" | "open" =
-                              event.categoria === "master" ? "master" : "open";
+                      {/* Dettagli */}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        {event.ora && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {event.ora}
+                          </span>
+                        )}
+                        {event.palestra && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            <span className="truncate">
+                              {event.palestra.substring(0, 25)}
+                            </span>
+                          </span>
+                        )}
+                      </div>
 
-                            // Determina avversario
-                            const opponent = event.squadraA.includes(
-                              "ASD Patr. San Giuseppe"
-                            )
-                              ? event.squadraB
-                              : event.squadraA;
-
-                            return (
-                              <div
-                                key={event.id}
-                                className="text-xs space-y-0.5"
-                              >
-                                <Badge
-                                  variant={badgeVariant}
-                                  className="text-[10px] px-1 py-0"
-                                >
-                                  {getCategoriaLabel(event.categoria)}
-                                </Badge>
-                                <p className="font-semibold truncate">
-                                  vs{" "}
-                                  {opponent
-                                    .replace("ASD ", "")
-                                    .substring(0, 20)}
-                                </p>
-                                {event.ora && (
-                                  <p className="text-muted-foreground flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {event.ora}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                          {dayEvents.length > 2 && (
-                            <p className="text-xs text-muted-foreground">
-                              +{dayEvents.length - 2} altre
-                            </p>
-                          )}
+                      {/* Risultato se disponibile */}
+                      {event.risultato && (
+                        <div className="pt-2 border-t">
+                          <p className="text-2xl font-bold text-center">
+                            {event.risultato.setA} - {event.risultato.setB}
+                          </p>
                         </div>
                       )}
-                    </>
-                  )}
-                </button>
-              );
-            })}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* VISTA DESKTOP - Calendario tradizionale */}
+          <div className="hidden md:block">
+            {/* Header giorni settimana */}
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {dayNames.map((day) => (
+                <div
+                  key={day}
+                  className="text-center text-sm font-semibold text-muted-foreground p-2"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Griglia calendario */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map((day, index) => {
+                const dayEvents = getEventsForDay(day);
+                const hasEvents = dayEvents.length > 0;
+                const today = isToday(day);
+
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleDayClick(day)}
+                    disabled={!day}
+                    className={cn(
+                      "min-h-[100px] p-2 rounded-lg border-2 transition-all text-left",
+                      "hover:shadow-md hover:border-primary/50",
+                      !day && "invisible",
+                      today && "border-primary bg-primary/5",
+                      hasEvents &&
+                        "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20",
+                      !hasEvents && "border-border hover:bg-muted/50"
+                    )}
+                  >
+                    {day && (
+                      <>
+                        {/* Numero giorno */}
+                        <div
+                          className={cn(
+                            "text-sm font-semibold mb-1",
+                            today && "text-primary",
+                            !today && "text-foreground"
+                          )}
+                        >
+                          {day}
+                        </div>
+
+                        {/* Anteprima evento */}
+                        {hasEvents && (
+                          <div className="space-y-1">
+                            {dayEvents.slice(0, 2).map((event) => {
+                              const badgeVariant: "master" | "open" =
+                                event.categoria === "master"
+                                  ? "master"
+                                  : "open";
+
+                              // Determina avversario
+                              const opponent = event.squadraA.includes(
+                                "ASD Patr. San Giuseppe"
+                              )
+                                ? event.squadraB
+                                : event.squadraA;
+
+                              return (
+                                <div
+                                  key={event.id}
+                                  className="text-xs space-y-0.5"
+                                >
+                                  <Badge
+                                    variant={badgeVariant}
+                                    className="text-[10px] px-1 py-0"
+                                  >
+                                    {getCategoriaLabel(event.categoria)}
+                                  </Badge>
+                                  <p className="font-semibold truncate">
+                                    vs{" "}
+                                    {opponent
+                                      .replace("ASD ", "")
+                                      .substring(0, 20)}
+                                  </p>
+                                  {event.ora && (
+                                    <p className="text-muted-foreground flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {event.ora}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {dayEvents.length > 2 && (
+                              <p className="text-xs text-muted-foreground">
+                                +{dayEvents.length - 2} altre
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -280,10 +388,10 @@ export default function CalendarView({ events }: CalendarViewProps) {
 
               {/* Squadre */}
               <div className="text-center py-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
                   <span
                     className={cn(
-                      "font-bold text-lg",
+                      "font-bold text-base sm:text-lg",
                       selectedEvent.squadraA.includes(
                         "ASD Patr. San Giuseppe"
                       ) && "text-primary"
@@ -291,12 +399,12 @@ export default function CalendarView({ events }: CalendarViewProps) {
                   >
                     {selectedEvent.squadraA}
                   </span>
-                  <span className="text-2xl font-light text-muted-foreground">
+                  <span className="text-xl sm:text-2xl font-light text-muted-foreground">
                     vs
                   </span>
                   <span
                     className={cn(
-                      "font-bold text-lg",
+                      "font-bold text-base sm:text-lg",
                       selectedEvent.squadraB.includes(
                         "ASD Patr. San Giuseppe"
                       ) && "text-primary"
