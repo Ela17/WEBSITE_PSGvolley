@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Tag } from "lucide-react";
+import { HeartCrack, Calendar, Tag } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function GazzettinoPage() {
@@ -49,7 +49,7 @@ export default function GazzettinoPage() {
           <TabsContent value="master">
             {postsMaster.length === 0 ? (
               <div className="text-center py-20">
-                <Calendar className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+                <HeartCrack className="w-20 h-20 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500 text-lg">
                   Nessun articolo pubblicato. Il primo numero è in arrivo!
                 </p>
@@ -138,7 +138,7 @@ export default function GazzettinoPage() {
           <TabsContent value="open">
             {postsOpen.length === 0 ? (
               <div className="text-center py-20">
-                <Calendar className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+                <HeartCrack className="w-20 h-20 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500 text-lg">
                   Nessun articolo pubblicato. Il primo numero è in arrivo!
                 </p>

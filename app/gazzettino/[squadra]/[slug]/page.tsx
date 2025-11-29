@@ -132,7 +132,6 @@ export default async function GazzettinoArticlePage({
           {/* Contenuto articolo */}
           <Card className="mb-8 shadow-lg">
             <CardContent className="p-6 md:p-8 lg:p-12">
-              {/* Usa la classe prose che abbiamo definito in globals.css */}
               <article
                 className="prose prose-lg"
                 dangerouslySetInnerHTML={{ __html: post.content }}
