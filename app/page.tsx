@@ -3,8 +3,10 @@ import Link from "next/link";
 import path from "path";
 import { getLatestGazzettinoPostBySquadra } from "@/lib/markdown";
 import { readCampionatoCSV, getNextMatch } from "@/lib/campionato";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { getCategoriaLabel } from "@/lib/campionato-types";
 import NextMatchCard from "@/components/NextMatchCard";
 
 export default function Home() {
@@ -61,9 +63,9 @@ export default function Home() {
                 <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
-                        MASTER 4+2
-                      </span>
+                      <Badge variant={"master"}>
+                        {getCategoriaLabel("master")}
+                      </Badge>
                       <p className="text-sm text-muted-foreground">
                         {format(
                           new Date(latestMasterPost.date),
@@ -95,9 +97,9 @@ export default function Home() {
                 <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
-                        OPEN 3×3
-                      </span>
+                      <Badge variant={"open"}>
+                        {getCategoriaLabel("open")}
+                      </Badge>
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(latestOpenPost.date), "dd MMMM yyyy", {
                           locale: it,
