@@ -396,4 +396,4 @@ Questo progetto è sviluppato come progetto interno per la sezione pallavolo del
 - 🌐 **Sito Web**: [Progetto interno su Netlify](https://asdpatrociniosangiuseppe-volley.netlify.app/)
 - 📱 **Instagram**: [@asd_patrocinosgiuseppe](https://www.instagram.com/asd_patrocinosgiuseppe)
 - 📍 **Sede**: [Via Pietro Baiardi 4, Torino](https://www.google.com/search?q=maps+via+pietro+baiardi+4+torino)
-- 🏐 **UISP Torino**: [Classifiche e Regolamenti](https://torino.uisp.it/)
+- 🏐 **UISP Torino**: [Classifiche e Regolamenti](https://sites.google.com/view/uisppallavolopiemonte/home-page)
