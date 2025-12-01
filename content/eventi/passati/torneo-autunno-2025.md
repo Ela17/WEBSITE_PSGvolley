@@ -36,7 +36,7 @@ Con un totale di **59 giocatori e giocatrici** che hanno dato il massimo in camp
 
 La giornata si è articolata in diverse fasi:
 
-- **9:00 - 13:45**: Fase a gironi (due gironi da 4 squadre)
+- **9:00 - 13:45**: Fase a gironi (due gironi da 4 squadre) con partite single set
 - **Pausa pranzo**: Le squadre hanno potuto pranzare con uno **sconto dedicato** offerto dal **[nostro sponsor](https://www.patago.it/)**!
 - **14:10 - 16:45**: Quarti di finale
 - **17:30 - 18:15**: Semifinali
@@ -204,7 +204,7 @@ Un ringraziamento speciale a:
 - **Giocatori totali**: 59
 - **Partite finite 2-0**: 9
 - **Partite finite 2-1**: 13
-- **Set totali giocati**: 57
+- **Set totali giocati**: 34
 
 ---
 
