@@ -10,6 +10,8 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Eye, ImagePlus } from "lucide-react";
+
 import {
   Calendar,
   MapPin,
@@ -248,6 +250,19 @@ export default async function EventoDetailPage({
                     </Link>
                   </div>
                 )}
+                {evento.locandina && (
+                  <div className="pt-2">
+                    <a
+                      href={evento.locandina}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 underline font-semibold"
+                    >
+                      <Eye className="w-5 h-5" />
+                      <span> Visualizza la locandina dell'evento!</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -265,7 +280,7 @@ export default async function EventoDetailPage({
               {/* Link Google Drive subito dopo il carosello */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-r-lg">
                 <p className="text-gray-700">
-                  📸{" "}
+                  <ImagePlus className="w-5 h-5 inline-block mr-2 text-blue-500" />
                   <strong>
                     Tutte le foto del torneo sono disponibili nella{" "}
                     <a

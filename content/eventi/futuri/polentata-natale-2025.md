@@ -11,6 +11,7 @@ registrationLink: ""
 registrationDeadline: "2025-12-18"
 fee: "Bambini fino 6 anni: 8€ | Tesserati: 10€ | Non tesserati: 12€"
 tags: ["PolentataDiNatale", "PSG", "PatrocinioSanGiuseppe", "Natale2025"]
+locandina: "/locandine/eventi/polentata-natale-2025/Polentata_Natale_2025.pdf"
 ---
 
 ## Polentata di Natale 2025 🎄🍲

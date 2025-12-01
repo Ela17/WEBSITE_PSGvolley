@@ -29,6 +29,7 @@ export interface Evento {
   fee?: string;
   tags?: string[]; // Hashtag/tags dell'evento
   content: string;
+  locandina?: string | null; // Percorso della locandina
 }
 
 export interface EventoPreview extends Omit<Evento, "content"> {}
@@ -87,6 +88,7 @@ export function getAllEventiFuturi(): EventoPreview[] {
           registrationLink: data.registrationLink,
           registrationDeadline: data.registrationDeadline,
           fee: data.fee,
+          locandina: data.locandina || null,
         } as EventoPreview;
       } catch (error) {
         console.error(`Error reading evento futuro ${fileName}:`, error);
@@ -127,6 +129,7 @@ export function getAllEventiPassati(): EventoPreview[] {
           category: data.category || "",
           images: data.images || [],
           results: data.results,
+          locandina: data.locandina || null,
         } as EventoPreview;
       } catch (error) {
         console.error(`Error reading evento passato ${fileName}:`, error);
@@ -203,6 +206,7 @@ export async function getEventoBySlug(
       fee: data.fee,
       tags: data.tags || [],
       content: contentHtml,
+      locandina: data.locandina || null,
     };
   } catch (error) {
     console.error(`Error reading evento ${slug}:`, error);
