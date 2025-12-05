@@ -1,55 +1,52 @@
 /**
- * Script per generare hash bcrypt delle password per l'admin
- * 
- * Uso:
- *   node scripts/hash-password.js your-password
- * 
- * Oppure eseguire senza argomenti per inserire interattivamente:
- *   node scripts/hash-password.js
+ * Script per generare hash password in formato Base64
+ * Uso: node scripts/generate-hash-base64.js <password>
  */
 
 const bcrypt = require('bcryptjs');
 const readline = require('readline');
 
-async function hashPassword(password) {
+async function generateHash() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  // Leggi password (se non passata come argomento)
+  const password = process.argv[2] || await new Promise(resolve => {
+    rl.question('Inserisci la password: ', resolve);
+  });
+
+  rl.close();
+
+  console.log('\n🔐 Generazione hash...\n');
+
+  // Genera hash bcrypt
   const saltRounds = 10;
   const hash = await bcrypt.hash(password, saltRounds);
-  return hash;
-}
-
-async function main() {
-  const args = process.argv.slice(2);
   
-  if (args.length > 0) {
-    // Password fornita come argomento
-    const password = args[0];
-    const hash = await hashPassword(password);
-    console.log('\n✅ Hash generato con successo!\n');
-    console.log('Aggiungi questa riga al tuo file .env.local:\n');
-    console.log(`ADMIN_PASSWORD_HASH=${hash}\n`);
-  } else {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+  console.log('Hash bcrypt originale:');
+  console.log(hash);
+  console.log('');
 
-    rl.question('Inserisci la password da hashare: ', async (password) => {
-      if (!password || password.trim().length === 0) {
-        console.error('\n❌ Errore: la password non può essere vuota');
-        rl.close();
-        process.exit(1);
-      }
-
-      const hash = await hashPassword(password);
-      console.log('\n✅ Hash generato con successo!\n');
-      console.log('Aggiungi questa riga al tuo file .env.local:\n');
-      console.log(`ADMIN_PASSWORD_HASH=${hash}\n`);
-      rl.close();
-    });
-  }
+  // Converti in Base64
+  const base64Hash = Buffer.from(hash).toString('base64');
+  
+  console.log('Hash Base64 (da usare in .env):');
+  console.log(base64Hash);
+  console.log('');
+  
+  console.log('✅ Copia questa riga nel file .env:');
+  console.log(`ADMIN_PASSWORD_HASH_BASE64=${base64Hash}`);
+  console.log('');
+  
+  // Verifica
+  const decoded = Buffer.from(base64Hash, 'base64').toString('utf-8');
+  const isValid = await bcrypt.compare(password, decoded);
+  
+  console.log('🔍 Verifica:');
+  console.log('Decodifica corretta:', decoded === hash ? '✅' : '❌');
+  console.log('Password valida:', isValid ? '✅' : '❌');
 }
 
-main().catch(err => {
-  console.error('❌ Errore:', err);
-  process.exit(1);
-});
+generateHash().catch(console.error);

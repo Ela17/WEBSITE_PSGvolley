@@ -1,30 +1,66 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { getIronSession } from 'iron-session';
+import { sessionOptions, SessionData } from '@/lib/session';
+import { AUTH_CONFIG } from '@/lib/env';
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { username, password } = body;
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+    // Validazione input
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: 'Username e password obbligatori' },
+        { status: 400 }
+      );
+    }
 
-  // Ignora la pagina di login stessa
-  if (pathname === '/admin/login') {
-    return NextResponse.next();
+    console.log('🔐 Tentativo login per:', username);
+
+    // Verifica username
+    if (username !== AUTH_CONFIG.adminUsername) {
+      console.log('❌ Username errato');
+      return NextResponse.json(
+        { error: 'Credenziali non valide' },
+        { status: 401 }
+      );
+    }
+
+    // Verifica password con bcrypt
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      AUTH_CONFIG.adminPasswordHash
+    );
+
+    if (!isPasswordValid) {
+      console.log('❌ Password errata');
+      return NextResponse.json(
+        { error: 'Credenziali non valide' },
+        { status: 401 }
+      );
+    }
+
+    console.log('✅ Login SUCCESS per:', username);
+
+    // Crea sessione con tipo SessionData
+    const response = NextResponse.json({ success: true });
+    const session = await getIronSession<SessionData>(request, response, sessionOptions);
+    
+    session.user = {
+      username: AUTH_CONFIG.adminUsername,
+      isLoggedIn: true,
+    };
+    
+    await session.save();
+
+    return response;
+  } catch (error) {
+    console.error('❌ Errore durante login:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
   }
-
-  // Verifica se c'è il cookie di sessione
-  const authCookie = request.cookies.get('admin_auth')?.value;
-  
-  // Se cookie valido, continua
-  if (authCookie === 'authenticated') {
-    return NextResponse.next();
-  }
-
-  // Altrimenti redirect a login
-  const loginUrl = new URL('/admin/login', request.url);
-  return NextResponse.redirect(loginUrl);
 }
-
-export const config = {
-  matcher: '/admin/:path*',
-};
