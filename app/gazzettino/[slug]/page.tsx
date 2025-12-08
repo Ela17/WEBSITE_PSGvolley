@@ -11,9 +11,8 @@ import { ArrowLeft, Calendar, User, Tag as TagIcon } from "lucide-react";
 
 // Genera i path statici per tutti gli articoli
 export async function generateStaticParams() {
-  const slugsData = getAllGazzettinoSlugs();
-  return slugsData.map(({ slug, squadra }) => ({
-    squadra: squadra === "MASTER 4+2" ? "master" : "open",
+  const slugs = getAllGazzettinoSlugs();
+  return slugs.map((slug) => ({
     slug: slug,
   }));
 }
@@ -21,12 +20,10 @@ export async function generateStaticParams() {
 export default async function GazzettinoArticlePage({
   params,
 }: {
-  params: Promise<{ squadra: string; slug: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { squadra, slug } = await params;
-  const squadraRichiesta: "MASTER 4+2" | "OPEN 3×3" =
-    squadra === "master" ? "MASTER 4+2" : "OPEN 3×3";
-  const post = await getGazzettinoPostBySlug(slug, squadraRichiesta);
+  const { slug } = await params;
+  const post = await getGazzettinoPostBySlug(slug);
 
   if (!post) {
     notFound();
@@ -62,16 +59,6 @@ export default async function GazzettinoArticlePage({
               className="bg-blue-100 text-blue-800 hover:bg-blue-200"
             >
               Giornata {post.week}
-            </Badge>
-            {/* Badge Categoria */}
-            <Badge
-              className={`${
-                post.squadra === "MASTER 4+2"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-green-600 hover:bg-green-700"
-              } text-white`}
-            >
-              {post.squadra}
             </Badge>
             {post.category && (
               <Badge

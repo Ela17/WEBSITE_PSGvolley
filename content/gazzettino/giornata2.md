@@ -4,7 +4,7 @@ date: "2025-11-24"
 week: 2
 season: "2025-26"
 excerpt: "L'ASD Patrocinio San Giuseppe chiude anche la seconda partita con una vittoria, imponendosi per 3-1 contro il Sinapsi."
-coverImage: "/images/gazzettino/master/giornata-2/cover.jpg"
+coverImage: "/images/gazzettino/giornata-2/cover.jpg"
 category: "Campionato Master"
 author: "Redazione a cura di: Fratta, Zucco, Casa, Samu, Ele, Pippo"
 tags: ["vittoria", "4+2"]
