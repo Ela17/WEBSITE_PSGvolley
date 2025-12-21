@@ -7,6 +7,7 @@ Le nostre squadre di pallavolo mista competono nei campionati UISP di Torino nel
 ## 📋 Indice
 
 - [Panoramica](#-panoramica)
+- [🚧 In Aggiornamento: Migrazione a Supabase](#-in-aggiornamento-migrazione-a-supabase)
 - [Caratteristiche Principali](#-caratteristiche-principali)
 - [Tecnologie](#-tecnologie)
 - [Struttura del Progetto](#-struttura-del-progetto)
@@ -23,8 +24,8 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 ### Architettura Attuale
 
 - **Hosting**: [Netlify](https://www.netlify.com/) con deploy automatico da Git
-- **Contenuti**: File-based (Markdown + CSV), versionati su Git
-- **Database**: Nessuno - architettura statica con generazione al build time
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL) - *migrazione in corso*
+- **Contenuti**: Ibrido file-based (Markdown + CSV) + Database
 - **Dominio**: Interno (netlify.app) - dominio personalizzato previsto per versione ufficiale futura
 
 ### Obiettivi del Progetto
@@ -33,6 +34,115 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 - **Comunicazione**: Mantenere la community informata attraverso "Il Gazzettino" (magazine digitale)
 - **Engagement**: Promuovere eventi, tornei e attività sociali della squadra
 - **Portfolio**: Dimostrare competenze in sviluppo web con tecnologie moderne e best practices
+
+---
+
+## 🚧 In Aggiornamento: Migrazione a Supabase
+
+Il progetto sta migrando da un'architettura completamente file-based a un **database Supabase** per permettere aggiornamenti dinamici senza rebuild.
+
+### Stato della Migrazione
+
+| Componente | File-based | Database | Stato |
+|------------|:----------:|:--------:|:-----:|
+| Gazzettino | `content/gazzettino/*.md` | `gazzettino_articles` | ✅ Dati migrati |
+| Eventi | `content/eventi/**/*.md` | `eventi` | ✅ Dati migrati |
+| Partite | `content/campionati/*.csv` | `matches` | ✅ Dati migrati |
+| Codice Next.js | Legge da file | Legge da DB | 🔄 In corso |
+
+### Schema Database
+
+```sql
+-- Articoli Gazzettino
+CREATE TABLE gazzettino_articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  date DATE NOT NULL,
+  week INTEGER NOT NULL,
+  season TEXT NOT NULL,
+  excerpt TEXT,
+  cover_image TEXT,
+  category TEXT,
+  author TEXT NOT NULL,
+  tags TEXT[] DEFAULT '{}',
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Eventi
+CREATE TABLE eventi (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  date DATE NOT NULL,
+  location TEXT,
+  location_link TEXT,
+  description TEXT NOT NULL,
+  cover_image TEXT,
+  type TEXT NOT NULL CHECK (type IN ('torneo', 'amichevole', 'evento-sociale', 'altro')),
+  category TEXT,
+  images TEXT[] DEFAULT '{}',
+  images_folder TEXT,
+  registration_link TEXT,
+  registration_deadline DATE,
+  fee TEXT,
+  tags TEXT[] DEFAULT '{}',
+  content TEXT NOT NULL,
+  locandina TEXT,
+  is_past BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Partite Campionato
+CREATE TABLE matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  categoria TEXT NOT NULL CHECK (categoria IN ('master', 'open')),
+  numero_gara TEXT NOT NULL,
+  data DATE NOT NULL,
+  ora TEXT,
+  squadra_a TEXT NOT NULL,
+  squadra_b TEXT NOT NULL,
+  palestra TEXT,
+  note TEXT,
+  set_a_vinti INTEGER,
+  set_b_vinti INTEGER,
+  punteggi_set JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Variabili d'Ambiente Richieste
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### Script di Migrazione
+
+Gli script per migrare i contenuti sono in `scripts/`:
+
+```bash
+# Migra articoli Gazzettino
+npm run migrate:gazzettino
+
+# Migra eventi
+npm run migrate:eventi
+
+# Migra partite da CSV
+npm run migrate:matches
+
+# Migra tutto
+npm run migrate:all
+```
+
+---
 
 ## ✨ Caratteristiche Principali
 
@@ -45,7 +155,7 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 
 ### 📰 Il Gazzettino PSG
 - Magazine digitale con cronache delle partite
-- Articoli organizzati per squadra (Master/Open) e giornata
+- Articoli organizzati per giornata di campionato
 - Valutazioni giocatori e commenti divertenti
 - Sistema di tag e categorie
 - Design editoriale professionale
@@ -77,6 +187,10 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety
 - **[Tailwind CSS v4](https://tailwindcss.com/)** - Styling utility-first
 
+### Database & Backend
+- **[Supabase](https://supabase.com/)** - Database PostgreSQL + Auth + API
+- **[@supabase/supabase-js](https://github.com/supabase/supabase-js)** - Client JavaScript
+
 ### UI Components
 - **[shadcn/ui](https://ui.shadcn.com/)** - Componenti accessibili e personalizzabili
 - **[Radix UI](https://www.radix-ui.com/)** - Primitives UI
@@ -94,6 +208,7 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 - **[date-fns](https://date-fns.org/)** - Manipolazione date con localizzazione italiana
 - **[embla-carousel-react](https://www.embla-carousel.com/)** - Caroselli immagini
 - **[clsx](https://github.com/lukeed/clsx)** & **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** - Utility per classi CSS
+- **[dotenv](https://github.com/motdotla/dotenv)** - Gestione variabili d'ambiente
 
 ## 📁 Struttura del Progetto
 
@@ -106,9 +221,13 @@ pallavolo-sito/
 │   ├── chi-siamo/               # Chi Siamo
 │   ├── campionato/              # Classifiche e calendario
 │   ├── gazzettino/              # Magazine
-│   │   └── [squadra]/[slug]/   # Articoli dinamici
-│   └── eventi/                  # Eventi
-│       └── [slug]/              # Dettaglio evento
+│   │   └── [slug]/              # Articoli dinamici
+│   ├── eventi/                  # Eventi
+│   │   └── [slug]/              # Dettaglio evento
+│   ├── admin/                   # Area amministrazione
+│   │   └── login/               # Login admin
+│   └── api/                     # API Routes
+│       └── auth/                # Autenticazione
 ├── components/                   # Componenti React
 │   ├── ui/                      # shadcn/ui components
 │   ├── Navbar.tsx               # Navigazione
@@ -120,19 +239,24 @@ pallavolo-sito/
 │   ├── ScrollToTop.tsx          # Bottone scroll-to-top
 │   └── Breadcrumbs.tsx          # Breadcrumbs navigazione
 ├── lib/                          # Utilities e logica
+│   ├── supabase.ts              # Client Supabase
 │   ├── campionato.ts            # Gestione dati campionati
 │   ├── campionato-types.ts      # Type definitions campionati
 │   ├── markdown.ts              # Gestione contenuti Gazzettino
 │   ├── eventi.ts                # Gestione eventi
 │   ├── calendar-utils.ts        # Utility calendario
+│   ├── session.ts               # Gestione sessioni admin
+│   ├── env.ts                   # Variabili d'ambiente
 │   └── utils.ts                 # Utility generali
-├── content/                      # Contenuti (Git-tracked)
+├── scripts/                      # Script di utilità
+│   ├── migrate-gazzettino.ts    # Migrazione articoli → DB
+│   ├── migrate-eventi.ts        # Migrazione eventi → DB
+│   └── migrate-matches.ts       # Migrazione partite → DB
+├── content/                      # Contenuti (Git-tracked, backup)
 │   ├── campionati/              # Dati CSV campionati
 │   │   ├── master.csv           # Partite MASTER 4+2
 │   │   └── open.csv             # Partite OPEN 3×3
 │   ├── gazzettino/              # Articoli markdown
-│   │   ├── master/              # Articoli squadra Master
-│   │   └── open/                # Articoli squadra Open
 │   └── eventi/                  # Eventi markdown
 │       ├── futuri/              # Eventi in programma
 │       └── passati/             # Eventi conclusi
@@ -140,7 +264,6 @@ pallavolo-sito/
     └── images/                  # Immagini e loghi
         ├── logos/               # Loghi squadra e sponsor
         └── eventi/              # Foto eventi
-
 ```
 
 ## 🚀 Installazione e Sviluppo
@@ -149,6 +272,7 @@ pallavolo-sito/
 
 - **Node.js** 20.x o superiore
 - **npm** o **pnpm** (raccomandato)
+- **Account Supabase** (per il database)
 
 ### Setup Locale
 
@@ -161,6 +285,10 @@ cd pallavolo-sito
 npm install
 # oppure
 pnpm install
+
+# Configura le variabili d'ambiente
+cp .env.example .env.local
+# Modifica .env.local con le tue credenziali
 
 # Avvia il server di sviluppo
 npm run dev
@@ -180,10 +308,17 @@ npm run build
 npm start
 ```
 
-### Linting
+### Script Disponibili
 
 ```bash
-npm run lint
+npm run dev              # Avvia dev server
+npm run build            # Build produzione
+npm run start            # Avvia produzione
+npm run lint             # Linting
+npm run migrate:gazzettino  # Migra articoli a DB
+npm run migrate:eventi      # Migra eventi a DB
+npm run migrate:matches     # Migra partite a DB
+npm run migrate:all         # Migra tutto
 ```
 
 ## 🚀 Deployment
@@ -197,52 +332,31 @@ Il sito è attualmente hostato su Netlify con deploy automatico:
 - **Publish directory**: `.next`
 - **Node version**: 20.x
 
-**Vantaggi architettura statica:**
-- ✅ Zero costi di hosting (piano gratuito Netlify)
-- ✅ Deploy automatico ad ogni push
-- ✅ Preview deployment per pull request
-- ✅ CDN globale e HTTPS automatico
-- ✅ Nessuna gestione server o database
-
-**Limitazioni:**
-- ❌ Aggiornamenti contenuti richiedono commit + push
-- ❌ Nessuna gestione utenti o autenticazione
-- ❌ Scalabilità limitata per grandi volumi di contenuti
-
-### Deploy Manuale
-
-Per deployare manualmente su altre piattaforme (Vercel, Cloudflare Pages, ecc.):
-
-```bash
-# Build di produzione
-npm run build
-
-# La cartella .next/ contiene il sito ottimizzato
-# Carica il contenuto sulla piattaforma di hosting
-```
+**Variabili d'ambiente su Netlify:**
+Configurare in Site Settings → Environment Variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SESSION_SECRET`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD_HASH_BASE64`
 
 ## 📝 Gestione dei Contenuti
 
-> **Nota**: Tutti i contenuti sono gestiti tramite **file statici** (Markdown e CSV) versionati su Git. Non c'è un database: ogni modifica richiede un commit e un push per essere pubblicata. La zona admin futura semplificherà questo processo.
+> **Nota**: Il sistema sta migrando da file statici a database. I file in `content/` sono mantenuti come backup e per compatibilità.
 
-### Campionati (CSV)
+### Database (Nuovo)
 
-I dati delle partite sono gestiti tramite file CSV in `content/campionati/`:
+I contenuti sono gestiti nel database Supabase:
+- **gazzettino_articles**: Articoli del Gazzettino
+- **eventi**: Eventi futuri e passati
+- **matches**: Partite dei campionati
 
-**Struttura CSV:**
-```csv
-CAT,N. Gara,Data,Ora,Squadra A,Separatore,Squadra B,PALESTRA,NOTE,SetA_Vinti,SetB_Vinti,1_SET_PTS_A,1_SET_PTS_B,...
-```
+### File Markdown (Legacy/Backup)
 
-- **Calcolo automatico classifiche**: Punti, set vinti/persi, quoziente set
-- **Parsing date italiane**: Formato `gg/mm/aa`
-- **Normalizzazione categorie**: MASTER 4+2, OPEN 3×3
+I file markdown in `content/` rimangono come backup e per gli script di migrazione.
 
-### Il Gazzettino (Markdown)
-
-Articoli in `content/gazzettino/[master|open]/`:
-
-**Frontmatter esempio:**
+**Frontmatter Gazzettino:**
 ```yaml
 ---
 title: "Titolo articolo"
@@ -255,15 +369,9 @@ category: "Cronaca"
 author: "Nome Autore"
 tags: [vittoria, rimonta, derby]
 ---
-
-Contenuto markdown dell'articolo...
 ```
 
-### Eventi (Markdown)
-
-Eventi in `content/eventi/[futuri|passati]/`:
-
-**Frontmatter esempio (Futuro):**
+**Frontmatter Eventi:**
 ```yaml
 ---
 title: "Nome Torneo"
@@ -274,40 +382,15 @@ description: "Descrizione breve"
 coverImage: "/images/eventi/cover.jpg"
 type: torneo  # torneo | amichevole | evento-sociale | altro
 category: "Master"
-registrationLink: "https://..."
-registrationDeadline: "2025-02-15"
-fee: "15€ a persona"
 tags: [torneo, open, primavera]
 ---
-
-Dettagli evento in markdown...
-```
-
-**Frontmatter esempio (Passato):**
-```yaml
----
-title: "Nome Torneo"
-date: "2024-12-15"
-location: "Palestra XYZ"
-description: "Descrizione breve"
-coverImage: "/images/eventi/cover.jpg"
-type: torneo
-category: "Master"
-images:
-  - /images/eventi/torneo2024/foto1.jpg
-  - /images/eventi/torneo2024/foto2.jpg
-imagesFolder: "eventi/torneo2024"
-tags: [torneo, vittoria]
----
-
-Resoconto evento in markdown...
 ```
 
 ## 🎨 Funzionalità Implementate
 
 ### Homepage
 - ✅ Hero section con logo e titolo
-- ✅ Ultimi articoli del Gazzettino (Master e Open)
+- ✅ Ultimi articoli del Gazzettino
 - ✅ Prossime partite per entrambe le categorie
 - ✅ Design responsive
 
@@ -327,7 +410,7 @@ Resoconto evento in markdown...
 - ✅ Link a regolamento UISP
 
 ### Il Gazzettino
-- ✅ Tab separate per Master e Open
+- ✅ Lista articoli cronologica
 - ✅ Card articoli con cover image
 - ✅ Tag e categorie
 - ✅ Pagine articolo con styling markdown
@@ -341,6 +424,11 @@ Resoconto evento in markdown...
 - ✅ Modalità fullscreen per foto
 - ✅ Link Google Drive per gallery complete
 
+### Admin
+- ✅ Sistema autenticazione con iron-session
+- ✅ Login protetto
+- ✅ Dashboard admin (in sviluppo)
+
 ### UI/UX
 - ✅ Navbar sticky con indicatore pagina attiva
 - ✅ Footer con sponsor e social
@@ -351,28 +439,18 @@ Resoconto evento in markdown...
 
 ## 🗺 Roadmap
 
-### In Sviluppo
-- 🚧 **Zona Admin** per gestione contenuti
-  - Dashboard amministrativa
-  - Upload/modifica/eliminazione articoli Gazzettino
-  - Gestione eventi (creazione, editing, upload foto)
-  - Aggiornamento CSV campionati
-  - Autenticazione sicura
+### In Corso
+- 🔄 **Migrazione a Supabase** - Lettura contenuti da database
+- 🔄 **Zona Admin** per gestione contenuti via web
 
-### Evoluzione Versione Ufficiale
+### Prossimi Passi
+- 📝 Editor visuale per articoli Gazzettino
+- 📝 Gestione eventi da admin panel
+- 📝 Aggiornamento risultati partite da admin
+
+### Evoluzione Futura
 - 🌐 **Dominio personalizzato**
-- 🗄️ **Migrazione a Database** 
-  - Sistema CMS per gestione contenuti
-  - Database per articoli, eventi, partite
-  - API backend per operazioni CRUD
-  - Backup e versioning automatico
 - 🐳 **Containerizzazione con Docker**
-  - Dockerfile per ambiente consistente
-  - Docker Compose per stack completo (app + DB)
-  - Deployment semplificato su qualsiasi server
-  - Sviluppo locale isolato
-
-### Funzionalità Future
 - 👥 Pagine profilo giocatori
 
 ## 👨‍💻 Crediti
