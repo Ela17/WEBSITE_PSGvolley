@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getAllGazzettinoPostsPreview } from "@/lib/markdown";
+import { getAllGazzettinoPostsPreview } from "@/lib/gazzettino";
 import {
   Card,
   CardContent,

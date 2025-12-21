@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import path from "path";
-import { getLatestGazzettinoPost } from "@/lib/markdown";
+import { getLatestGazzettinoPost } from "@/lib/gazzettino";
 import { readCampionatoCSV, getNextMatch } from "@/lib/campionato";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";

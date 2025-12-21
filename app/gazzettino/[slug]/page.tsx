@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGazzettinoPostBySlug, getAllGazzettinoSlugs } from "@/lib/markdown";
+import { getGazzettinoPostBySlug, getAllGazzettinoSlugs } from "@/lib/gazzettino";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";

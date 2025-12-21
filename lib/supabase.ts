@@ -1,24 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Client pubblico (solo lettura con anon key)
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Client admin (scrittura con service_role key - SOLO SERVER-SIDE!)
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
-// Types per TypeScript
+// Tipi per il database
 export interface GazzettinoArticle {
   id: string;
   slug: string;
@@ -36,7 +18,7 @@ export interface GazzettinoArticle {
   updated_at: string;
 }
 
-export interface Evento {
+export interface DBEvento {
   id: string;
   slug: string;
   title: string;
@@ -76,4 +58,38 @@ export interface DBMatch {
   punteggi_set: Array<{ set: number; pts_a: number; pts_b: number }>;
   created_at: string;
   updated_at: string;
+}
+
+// Verifica che le variabili d'ambiente siano presenti
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ Variabili Supabase mancanti - alcune funzionalità potrebbero non funzionare');
+}
+
+// Client pubblico (solo lettura con anon key)
+export const supabase = createClient(
+  supabaseUrl || '',
+  supabaseAnonKey || ''
+);
+
+// Client admin (scrittura con service_role key)
+export function getSupabaseAdmin() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY non configurata');
+  }
+  
+  return createClient(
+    supabaseUrl || '',
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
 }
