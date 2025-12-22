@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 // Tipi per il database
 export interface GazzettinoArticle {
@@ -27,7 +27,7 @@ export interface DBEvento {
   location_link: string | null;
   description: string;
   cover_image: string | null;
-  type: 'torneo' | 'amichevole' | 'evento-sociale' | 'altro';
+  type: "torneo" | "amichevole" | "evento-sociale" | "altro";
   category: string | null;
   images: string[];
   images_folder: string | null;
@@ -45,7 +45,7 @@ export interface DBEvento {
 
 export interface DBMatch {
   id: string;
-  categoria: 'master' | 'open';
+  categoria: "master" | "open";
   numero_gara: string;
   data: string;
   ora: string | null;
@@ -65,31 +65,31 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Variabili Supabase mancanti - alcune funzionalità potrebbero non funzionare');
+  console.warn(
+    "⚠️ Variabili Supabase mancanti - alcune funzionalità potrebbero non funzionare"
+  );
 }
 
 // Client pubblico (solo lettura con anon key)
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+// Sicuro da usare sia client-side che server-side
+export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
 
 // Client admin (scrittura con service_role key)
+// ATTENZIONE: Usare SOLO in server-side (API routes, server components, scripts)
 export function getSupabaseAdmin() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
   if (!serviceRoleKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY non configurata');
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY non configurata");
   }
-  
-  return createClient(
-    supabaseUrl || '',
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
+
+  return createClient(supabaseUrl || "", serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
+
+// Alias per compatibilità
+export const createAdminClient = getSupabaseAdmin;
