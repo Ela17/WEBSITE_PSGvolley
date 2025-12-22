@@ -1,24 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
-import path from "path";
-import { getLatestGazzettinoPost } from "@/lib/gazzettino";
-import { readCampionatoCSV, getNextMatch } from "@/lib/campionato";
+import { getLatestGazzettinoPosts } from "@/lib/gazzettino";
+import { getNextMatchAsync } from "@/lib/campionato";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { getCategoriaLabel } from "@/lib/campionato-types";
 import NextMatchCard from "@/components/NextMatchCard";
 
-export default function Home() {
-  const latestPost = getLatestGazzettinoPost();
+export default async function Home() {
+  // Carica l'ultimo post del Gazzettino
+  const latestPost = (await getLatestGazzettinoPosts(1))[0] || null;
 
-  const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
-  const openPath = path.join(process.cwd(), "content/campionati/open.csv");
-
-  const masterMatches = readCampionatoCSV(masterPath);
-  const openMatches = readCampionatoCSV(openPath);
-
-  const nextMasterMatch = getNextMatch(masterMatches, "ASD Patr. San Giuseppe");
-  const nextOpenMatch = getNextMatch(openMatches, "ASD Patr. San Giuseppe");
+  // Carica prossime partite
+  const [nextMasterMatch, nextOpenMatch] = await Promise.all([
+    getNextMatchAsync("master", "ASD Patr. San Giuseppe"),
+    getNextMatchAsync("open", "ASD Patr. San Giuseppe"),
+  ]);
 
   return (
     <main className="min-h-screen">
@@ -32,7 +30,6 @@ export default function Home() {
               width={150}
               height={150}
               className="rounded-full"
-              priority
             />
           </div>
           <h1 className="text-5xl font-bold mb-4">Patrocinio San Giuseppe</h1>
@@ -45,16 +42,14 @@ export default function Home() {
       </section>
 
       <div className="container mx-auto px-4 py-12 space-y-16">
-        {/* Ultimo dal Gazzettino */}
+        {/* Sezione Gazzettino */}
         {latestPost && (
           <section>
-            <h2 className="text-3xl font-bold mb-6">Ultimo dal Gazzettino</h2>
+            <h2 className="text-3xl font-bold mb-6">Ultime dal Gazzettino</h2>
             <div className="bg-white dark:bg-card rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-blue-600 text-white">
-                    Il Gazzettino
-                  </Badge>
+                  <Badge variant="secondary">Giornata {latestPost.week}</Badge>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(latestPost.date), "dd MMMM yyyy", {
                       locale: it,

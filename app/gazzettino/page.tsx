@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Tag, HeartCrack } from "lucide-react";
+import { HeartCrack, Calendar, Tag } from "lucide-react";
 
-export default function GazzettinoPage() {
-  const allPosts = getAllGazzettinoPostsPreview();
+export default async function GazzettinoPage() {
+  const allPosts = await getAllGazzettinoPostsPreview();
 
   return (
     <main className="min-h-screen bg-gray-50">

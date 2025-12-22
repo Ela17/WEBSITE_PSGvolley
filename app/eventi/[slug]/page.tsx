@@ -49,8 +49,10 @@ const typeLabelMap = {
 
 // Genera i parametri statici per tutti gli eventi
 export async function generateStaticParams() {
-  const eventiFuturi = getAllEventiFuturi();
-  const eventiPassati = getAllEventiPassati();
+  const [eventiFuturi, eventiPassati] = await Promise.all([
+    getAllEventiFuturi(),
+    getAllEventiPassati(),
+  ]);
 
   const allSlugs = [
     ...eventiFuturi.map((e) => ({ slug: e.slug })),
@@ -65,7 +67,6 @@ export default async function EventoDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // In Next.js 15+, params è una Promise che deve essere awaited
   const { slug } = await params;
 
   // Prova prima negli eventi futuri (più recenti)

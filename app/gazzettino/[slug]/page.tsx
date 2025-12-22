@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGazzettinoPostBySlug, getAllGazzettinoSlugs } from "@/lib/gazzettino";
+import {
+  getGazzettinoPostBySlug,
+  getAllGazzettinoSlugs,
+} from "@/lib/gazzettino";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +14,8 @@ import { ArrowLeft, Calendar, User, Tag as TagIcon } from "lucide-react";
 
 // Genera i path statici per tutti gli articoli
 export async function generateStaticParams() {
-  const slugs = getAllGazzettinoSlugs();
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
+  const slugs = await getAllGazzettinoSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function GazzettinoArticlePage({

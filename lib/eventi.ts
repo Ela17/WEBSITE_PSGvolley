@@ -156,11 +156,12 @@ export async function getAllEventi(): Promise<EventoPreview[]> {
 }
 
 // Controlla se un evento è passato (utility)
-export function isEventoPast(slug: string): Promise<boolean> {
-  return supabase
+export async function isEventoPast(slug: string): Promise<boolean> {
+  const { data } = await supabase
     .from('eventi')
     .select('is_past')
     .eq('slug', slug)
-    .single()
-    .then(({ data }) => data?.is_past ?? false);
+    .single();
+  
+  return data?.is_past ?? false;
 }
