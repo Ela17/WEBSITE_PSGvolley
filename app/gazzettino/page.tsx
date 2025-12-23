@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getAllGazzettinoPostsPreview } from "@/lib/markdown";
+import { getAllGazzettinoPostsPreview } from "@/lib/gazzettino";
 import {
   Card,
   CardContent,
@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Tag, HeartCrack } from "lucide-react";
+import { HeartCrack, Calendar, Tag } from "lucide-react";
 
-export default function GazzettinoPage() {
-  const allPosts = getAllGazzettinoPostsPreview();
+export default async function GazzettinoPage() {
+  const allPosts = await getAllGazzettinoPostsPreview();
 
   return (
     <main className="min-h-screen bg-gray-50">

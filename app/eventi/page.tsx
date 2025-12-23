@@ -39,13 +39,11 @@ const typeLabelMap = {
   altro: "Altro",
 };
 
-export default function EventiPage() {
-  const eventiFuturi = getAllEventiFuturi().filter(
-    (e) => e.slug && e.slug !== "undefined" && e.slug !== "null"
-  );
-  const eventiPassati = getAllEventiPassati().filter(
-    (e) => e.slug && e.slug !== "undefined" && e.slug !== "null"
-  );
+export default async function EventiPage() {
+  const [eventiFuturi, eventiPassati] = await Promise.all([
+    getAllEventiFuturi(),
+    getAllEventiPassati(),
+  ]);
 
   return (
     <main className="min-h-screen bg-gray-50">

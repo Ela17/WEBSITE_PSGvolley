@@ -5,6 +5,8 @@ import {
   CalendarEvent,
   parseItalianDate,
   getCategoriaLabel,
+  formatDateItalian,
+  formatTimeItalian,
 } from "@/lib/campionato-types";
 import { getGoogleMapsLink } from "@/lib/calendar-utils";
 import {
@@ -210,7 +212,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-muted-foreground">
-                            {event.data}
+                            {formatDateItalian(event.data)}
                           </p>
                           <p className="text-lg font-bold mt-1">
                             vs {opponent.replace("ASD ", "")}
@@ -231,7 +233,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                         {event.ora && (
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            {event.ora}
+                            {formatTimeItalian(event.ora)}
                           </span>
                         )}
                         {event.palestra && (
@@ -350,7 +352,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                                   {event.ora && (
                                     <p className="text-muted-foreground flex items-center gap-1">
                                       <Clock className="w-3 h-3" />
-                                      {event.ora}
+                                      {formatTimeItalian(event.ora)}
                                     </p>
                                   )}
                                 </div>
@@ -432,9 +434,12 @@ export default function CalendarView({ events }: CalendarViewProps) {
               {/* Info partita */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 mt-0.5 text-muted-foreground" />
                   <div className="text-sm">
                     <p className="text-muted-foreground">Data</p>
-                    <p className="font-semibold">{selectedEvent.data}</p>
+                    <p className="font-semibold">
+                      {formatDateItalian(selectedEvent.data)}
+                    </p>
                   </div>
                 </div>
 
@@ -443,7 +448,9 @@ export default function CalendarView({ events }: CalendarViewProps) {
                     <Clock className="w-5 h-5 mt-0.5 text-muted-foreground" />
                     <div className="text-sm">
                       <p className="text-muted-foreground">Orario</p>
-                      <p className="font-semibold">{selectedEvent.ora}</p>
+                      <p className="font-semibold">
+                        {formatTimeItalian(selectedEvent.ora)}
+                      </p>
                     </div>
                   </div>
                 )}

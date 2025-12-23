@@ -1,4 +1,9 @@
-import { CalendarEvent, getCategoriaLabel } from "@/lib/campionato-types";
+import {
+  CalendarEvent,
+  getCategoriaLabel,
+  formatDateWithWeekday,
+  formatTimeItalian,
+} from "@/lib/campionato-types";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,13 +71,13 @@ export default function NextMatchCard({
         <div className="space-y-2">
           <div className="flex items-start gap-2 text-sm">
             <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-            <span>{match.data}</span>
+            <span>{formatDateWithWeekday(match.data)}</span>
           </div>
 
           {match.ora && (
             <div className="flex items-start gap-2 text-sm">
               <Clock className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-              <span>{match.ora}</span>
+              <span>{formatTimeItalian(match.ora)}</span>
             </div>
           )}
 

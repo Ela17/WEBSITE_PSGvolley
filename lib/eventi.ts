@@ -1,215 +1,167 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import { remark } from "remark";
-import html from "remark-html";
-import remarkGfm from "remark-gfm";
+import { supabase, DBEvento } from './supabase';
+import { remark } from 'remark';
+import html from 'remark-html';
+import remarkGfm from 'remark-gfm';
 
-const eventiFuturiDirectory = path.join(process.cwd(), "content/eventi/futuri");
-const eventiPassatiDirectory = path.join(
-  process.cwd(),
-  "content/eventi/passati"
-);
-
+// Interfacce compatibili con il codice esistente
 export interface Evento {
   slug: string;
   title: string;
   date: string;
   location: string;
-  locationLink?: string; // Link a Google Maps o altra mappa
+  locationLink?: string;
   description: string;
   coverImage: string;
-  type: "torneo" | "amichevole" | "evento-sociale" | "altro";
+  type: 'torneo' | 'amichevole' | 'evento-sociale' | 'altro';
   category: string;
   images?: string[];
-  imagesFolder?: string; // Cartella in public/images/
+  imagesFolder?: string;
   results?: string;
   registrationLink?: string;
   registrationDeadline?: string;
   fee?: string;
-  tags?: string[]; // Hashtag/tags dell'evento
+  tags?: string[];
   content: string;
-  locandina?: string | null; // Percorso della locandina
+  locandina?: string | null;
 }
 
-export interface EventoPreview extends Omit<Evento, "content"> {}
+export interface EventoPreview extends Omit<Evento, 'content'> {}
 
-// Funzione helper per leggere le immagini da una cartella
-function getImagesFromFolder(folderPath: string): string[] {
-  try {
-    const publicPath = path.join(process.cwd(), "public", "images", folderPath);
-
-    if (!fs.existsSync(publicPath)) {
-      console.warn(`Images folder not found: ${publicPath}`);
-      return [];
-    }
-
-    const files = fs.readdirSync(publicPath);
-    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-
-    return files
-      .filter((file) => {
-        const ext = path.extname(file).toLowerCase();
-        return imageExtensions.includes(ext);
-      })
-      .map((file) => `/images/${folderPath}/${file}`);
-  } catch (error) {
-    console.error(`Error reading images from folder ${folderPath}:`, error);
-    return [];
-  }
+// Converte da formato DB a formato app
+function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
+  return {
+    slug: e.slug,
+    title: e.title,
+    date: e.date,
+    location: e.location || '',
+    locationLink: e.location_link || undefined,
+    description: e.description,
+    coverImage: e.cover_image || '',
+    type: e.type,
+    category: e.category || '',
+    images: e.images || [],
+    imagesFolder: e.images_folder || undefined,
+    results: e.results || undefined,
+    registrationLink: e.registration_link || undefined,
+    registrationDeadline: e.registration_deadline || undefined,
+    fee: e.fee || undefined,
+    tags: e.tags || [],
+    content: includeContent ? e.content : '',
+    locandina: e.locandina,
+  };
 }
 
-// Legge tutti gli eventi futuri
-export function getAllEventiFuturi(): EventoPreview[] {
-  if (!fs.existsSync(eventiFuturiDirectory)) {
-    return [];
-  }
-
-  const fileNames = fs.readdirSync(eventiFuturiDirectory);
-  const eventi = fileNames
-    .filter((fileName) => fileName.endsWith(".md"))
-    .map((fileName) => {
-      try {
-        const slug = fileName.replace(/\.md$/, "");
-        const fullPath = path.join(eventiFuturiDirectory, fileName);
-        const fileContents = fs.readFileSync(fullPath, "utf8");
-        const { data } = matter(fileContents);
-
-        return {
-          slug,
-          title: data.title || "",
-          date: data.date || "",
-          location: data.location || "",
-          locationLink: data.locationLink,
-          description: data.description || "",
-          coverImage: data.coverImage || "",
-          type: data.type || "altro",
-          category: data.category || "",
-          registrationLink: data.registrationLink,
-          registrationDeadline: data.registrationDeadline,
-          fee: data.fee,
-          locandina: data.locandina || null,
-        } as EventoPreview;
-      } catch (error) {
-        console.error(`Error reading evento futuro ${fileName}:`, error);
-        return null;
-      }
-    })
-    .filter((evento): evento is EventoPreview => evento !== null)
-    .sort((a, b) => (new Date(a.date) > new Date(b.date) ? 1 : -1)); // Ordina per data crescente
-
-  return eventi;
+function dbToPreview(e: DBEvento): EventoPreview {
+  const { content, ...rest } = dbToEvento(e);
+  return rest as EventoPreview;
 }
 
-// Legge tutti gli eventi passati
-export function getAllEventiPassati(): EventoPreview[] {
-  if (!fs.existsSync(eventiPassatiDirectory)) {
+// Legge tutti gli eventi futuri (is_past = false)
+export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
+  const { data, error } = await supabase
+    .from('eventi')
+    .select('*')
+    .eq('is_past', false)
+    .order('date', { ascending: true }); // Futuri ordinati per data crescente
+
+  if (error) {
+    console.error('Errore getAllEventiFuturi:', error);
     return [];
   }
 
-  const fileNames = fs.readdirSync(eventiPassatiDirectory);
-  const eventi = fileNames
-    .filter((fileName) => fileName.endsWith(".md"))
-    .map((fileName) => {
-      try {
-        const slug = fileName.replace(/\.md$/, "");
-        const fullPath = path.join(eventiPassatiDirectory, fileName);
-        const fileContents = fs.readFileSync(fullPath, "utf8");
-        const { data } = matter(fileContents);
+  return (data || [])
+    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .map(dbToPreview);
+}
 
-        return {
-          slug,
-          title: data.title || "",
-          date: data.date || "",
-          location: data.location || "",
-          locationLink: data.locationLink,
-          description: data.description || "",
-          coverImage: data.coverImage || "",
-          type: data.type || "altro",
-          category: data.category || "",
-          images: data.images || [],
-          results: data.results,
-          locandina: data.locandina || null,
-        } as EventoPreview;
-      } catch (error) {
-        console.error(`Error reading evento passato ${fileName}:`, error);
-        return null;
-      }
-    })
-    .filter((evento): evento is EventoPreview => evento !== null)
-    .sort((a, b) => (new Date(a.date) > new Date(b.date) ? -1 : 1)); // Ordina per data decrescente
+// Legge tutti gli eventi passati (is_past = true)
+export async function getAllEventiPassati(): Promise<EventoPreview[]> {
+  const { data, error } = await supabase
+    .from('eventi')
+    .select('*')
+    .eq('is_past', true)
+    .order('date', { ascending: false }); // Passati ordinati per data decrescente
 
-  return eventi;
+  if (error) {
+    console.error('Errore getAllEventiPassati:', error);
+    return [];
+  }
+
+  return (data || [])
+    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .map(dbToPreview);
 }
 
 // Ottiene un singolo evento con contenuto completo
 export async function getEventoBySlug(
   slug: string,
-  type: "futuro" | "passato"
+  type?: 'futuro' | 'passato'
 ): Promise<Evento | null> {
   // Controllo che lo slug sia valido
-  if (!slug || slug === "undefined" || slug === "null") {
-    console.error("Invalid slug provided:", slug);
+  if (!slug || slug === 'undefined' || slug === 'null') {
+    console.error('Invalid slug provided:', slug);
     return null;
   }
 
-  try {
-    const directory =
-      type === "futuro" ? eventiFuturiDirectory : eventiPassatiDirectory;
-    const fullPath = path.join(directory, `${slug}.md`);
+  let query = supabase
+    .from('eventi')
+    .select('*')
+    .eq('slug', slug);
 
-    // Verifica che il file esista
-    if (!fs.existsSync(fullPath)) {
-      console.error(`File not found: ${fullPath}`);
-      return null;
+  // Se specificato il tipo, filtra per is_past
+  if (type === 'futuro') {
+    query = query.eq('is_past', false);
+  } else if (type === 'passato') {
+    query = query.eq('is_past', true);
+  }
+
+  const { data, error } = await query.single();
+
+  if (error || !data) {
+    // Se non trovato con il tipo specificato, prova senza filtro
+    if (type) {
+      return getEventoBySlug(slug);
     }
-
-    const fileContents = fs.readFileSync(fullPath, "utf8");
-    const { data, content } = matter(fileContents);
-
-    // Converti markdown in HTML con supporto per tabelle GFM
-    const processedContent = await remark()
-      .use(remarkGfm) // GitHub Flavored Markdown (tabelle, strikethrough, ecc.)
-      .use(html)
-      .process(content);
-    const contentHtml = processedContent.toString();
-
-    // Leggi le immagini dalla cartella se specificata
-    let eventImages = data.images || [];
-    if (data.imagesFolder && eventImages.length === 0) {
-      // Se imagesFolder è un array, prendi il primo elemento
-      const folderPath = Array.isArray(data.imagesFolder)
-        ? data.imagesFolder[0]
-        : data.imagesFolder;
-
-      // Rimuovi il prefisso "/images/" se presente
-      const cleanPath = folderPath.replace(/^\/images\//, "");
-
-      eventImages = getImagesFromFolder(cleanPath);
-    }
-
-    return {
-      slug,
-      title: data.title || "",
-      date: data.date || "",
-      location: data.location || "",
-      locationLink: data.locationLink,
-      description: data.description || "",
-      coverImage: data.coverImage || "",
-      type: data.type || "altro",
-      category: data.category || "",
-      images: eventImages,
-      imagesFolder: data.imagesFolder,
-      results: data.results,
-      registrationLink: data.registrationLink,
-      registrationDeadline: data.registrationDeadline,
-      fee: data.fee,
-      tags: data.tags || [],
-      content: contentHtml,
-      locandina: data.locandina || null,
-    };
-  } catch (error) {
-    console.error(`Error reading evento ${slug}:`, error);
+    console.error('Errore getEventoBySlug:', error);
     return null;
   }
+
+  // Converti markdown in HTML
+  const processedContent = await remark()
+    .use(remarkGfm)
+    .use(html)
+    .process(data.content);
+
+  const evento = dbToEvento(data, true);
+  evento.content = processedContent.toString();
+
+  return evento;
+}
+
+// Ottiene tutti gli eventi (futuri + passati)
+export async function getAllEventi(): Promise<EventoPreview[]> {
+  const { data, error } = await supabase
+    .from('eventi')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('Errore getAllEventi:', error);
+    return [];
+  }
+
+  return (data || [])
+    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .map(dbToPreview);
+}
+
+// Controlla se un evento è passato (utility)
+export async function isEventoPast(slug: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('eventi')
+    .select('is_past')
+    .eq('slug', slug)
+    .single();
+  
+  return data?.is_past ?? false;
 }

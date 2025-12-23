@@ -1,47 +1,163 @@
-import { parse } from "csv-parse/sync";
-import fs from "fs";
-import path from "path";
+import { supabase, DBMatch } from './supabase';
 
-export type { MatchResult, Ranking, CalendarEvent } from "./campionato-types";
-export { parseItalianDate } from "./campionato-types";
+// Re-export tipi esistenti per compatibilità
+export type { Ranking, CalendarEvent } from './campionato-types';
+export { parseItalianDate, getCategoriaLabel } from './campionato-types';
 
-import type { MatchResult, CalendarEvent, Ranking } from "./campionato-types";
-import { parseItalianDate } from "./campionato-types"; // ✅ Import per uso interno!
+import type { Ranking, CalendarEvent } from './campionato-types';
+import { parseItalianDate } from './campionato-types';
 
-/**
- * Normalizza la categoria dal CSV
- */
-function normalizeCategoria(cat: string): "master" | "open" {
-  const catUpper = cat.toUpperCase().trim();
-  if (catUpper.includes("4+2") || catUpper.includes("4")) {
-    return "master";
-  }
-  return "open";
+// Interfaccia per match dal DB (compatibile con MatchResult legacy)
+export interface MatchResult {
+  CAT: string;
+  'N. Gara': string;
+  Data: string;
+  Ora: string;
+  'Squadra A': string;
+  Separatore: string;
+  'Squadra B': string;
+  PALESTRA: string;
+  NOTE: string;
+  SetA_Vinti: string;
+  SetB_Vinti: string;
+  '1_SET_PTS_A': string;
+  '1_SET_PTS_B': string;
+  '2_SET_PTS_A': string;
+  '2_SET_PTS_B': string;
+  '3_SET_PTS_A': string;
+  '3_SET_PTS_B': string;
+  '4_SET_PTS_A': string;
+  '4_SET_PTS_B': string;
+  '5_SET_PTS_A': string;
+  '5_SET_PTS_B': string;
+}
+
+// Converte da formato DB a formato legacy MatchResult
+function dbToMatchResult(match: DBMatch): MatchResult {
+  const punteggi = match.punteggi_set || [];
+  
+  return {
+    CAT: match.categoria === 'master' ? '4+2' : 'OPMSB',
+    'N. Gara': match.numero_gara,
+    Data: match.data,
+    Ora: match.ora || '',
+    'Squadra A': match.squadra_a,
+    Separatore: '-',
+    'Squadra B': match.squadra_b,
+    PALESTRA: match.palestra || '',
+    NOTE: match.note || '',
+    SetA_Vinti: match.set_a_vinti?.toString() || '',
+    SetB_Vinti: match.set_b_vinti?.toString() || '',
+    '1_SET_PTS_A': punteggi[0]?.pts_a?.toString() || '',
+    '1_SET_PTS_B': punteggi[0]?.pts_b?.toString() || '',
+    '2_SET_PTS_A': punteggi[1]?.pts_a?.toString() || '',
+    '2_SET_PTS_B': punteggi[1]?.pts_b?.toString() || '',
+    '3_SET_PTS_A': punteggi[2]?.pts_a?.toString() || '',
+    '3_SET_PTS_B': punteggi[2]?.pts_b?.toString() || '',
+    '4_SET_PTS_A': punteggi[3]?.pts_a?.toString() || '',
+    '4_SET_PTS_B': punteggi[3]?.pts_b?.toString() || '',
+    '5_SET_PTS_A': punteggi[4]?.pts_a?.toString() || '',
+    '5_SET_PTS_B': punteggi[4]?.pts_b?.toString() || '',
+  };
+}
+
+// Converte DBMatch in CalendarEvent
+function dbToCalendarEvent(match: DBMatch): CalendarEvent {
+  const hasResult = match.set_a_vinti !== null && match.set_b_vinti !== null;
+  const punteggi = match.punteggi_set || [];
+
+  return {
+    id: match.numero_gara,
+    data: match.data,
+    ora: match.ora || '',
+    squadraA: match.squadra_a,
+    squadraB: match.squadra_b,
+    palestra: match.palestra || '',
+    note: match.note || '',
+    categoria: match.categoria,
+    categoriaOriginale: match.categoria === 'master' ? '4+2' : 'OPMSB',
+    risultato: hasResult
+      ? {
+          setA: match.set_a_vinti!,
+          setB: match.set_b_vinti!,
+          punteggiSet: punteggi
+            .filter(s => s.pts_a > 0 || s.pts_b > 0)
+            .map(s => ({ ptsA: s.pts_a, ptsB: s.pts_b })),
+        }
+      : undefined,
+  };
 }
 
 /**
- * Legge CSV
+ * Legge tutte le partite di una categoria dal database
+ */
+export async function getMatchesByCategoria(categoria: 'master' | 'open'): Promise<MatchResult[]> {
+  const { data, error } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('categoria', categoria)
+    .order('data', { ascending: true });
+
+  if (error) {
+    console.error(`Errore getMatchesByCategoria(${categoria}):`, error);
+    return [];
+  }
+
+  return (data || []).map(dbToMatchResult);
+}
+
+/**
+ * Legge CSV - ora legge dal database (mantenuto per compatibilità)
+ * @deprecated Usa getMatchesByCategoria invece
  */
 export function readCampionatoCSV(filePath: string): MatchResult[] {
-  const fileContent = fs.readFileSync(filePath, "utf-8");
-  const records = parse(fileContent, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-    skip_records_with_empty_values: true,
-  }) as MatchResult[];
-
-  return records.filter(
-    (record) => record["Squadra A"] && record["Squadra B"] && record["N. Gara"]
-  );
+  // Determina categoria dal path
+  const categoria = filePath.includes('master') ? 'master' : 'open';
+  
+  // NOTA: Questa funzione ora è sincrona ma i dati vengono dal DB
+  // Per compatibilità con il codice esistente, usiamo una cache locale
+  // In produzione, le pagine dovrebbero usare le funzioni async
+  console.warn(`readCampionatoCSV è deprecata. Usa getMatchesByCategoria('${categoria}')`);
+  
+  // Ritorna array vuoto - il codice chiamante dovrebbe essere aggiornato
+  return [];
 }
 
 /**
- * Trova prossima partita
+ * Trova prossima partita dal database
+ */
+export async function getNextMatchAsync(
+  categoria: 'master' | 'open',
+  teamName: string = 'ASD Patr. San Giuseppe'
+): Promise<CalendarEvent | null> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('categoria', categoria)
+    .gte('data', todayStr)
+    .is('set_a_vinti', null) // Partita non ancora giocata
+    .or(`squadra_a.ilike.%${teamName}%,squadra_b.ilike.%${teamName}%`)
+    .order('data', { ascending: true })
+    .limit(1);
+
+  if (error || !data || data.length === 0) {
+    return null;
+  }
+
+  return dbToCalendarEvent(data[0]);
+}
+
+/**
+ * Trova prossima partita (versione sincrona legacy)
+ * @deprecated Usa getNextMatchAsync
  */
 export function getNextMatch(
   matches: MatchResult[],
-  teamName: string = "ASD Patr. San Giuseppe"
+  teamName: string = 'ASD Patr. San Giuseppe'
 ): CalendarEvent | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -52,9 +168,9 @@ export function getNextMatch(
       matchDate.setHours(0, 0, 0, 0);
 
       const isTeamMatch =
-        match["Squadra A"]?.includes(teamName) ||
-        match["Squadra B"]?.includes(teamName);
-      const isNotPlayed = !match.SetA_Vinti || match.SetA_Vinti === "";
+        match['Squadra A']?.includes(teamName) ||
+        match['Squadra B']?.includes(teamName);
+      const isNotPlayed = !match.SetA_Vinti || match.SetA_Vinti === '';
 
       return matchDate >= today && isTeamMatch && isNotPlayed;
     })
@@ -67,54 +183,38 @@ export function getNextMatch(
   if (upcomingMatches.length === 0) return null;
 
   const match = upcomingMatches[0];
-  const categoria = normalizeCategoria(match.CAT || "");
-  return convertToCalendarEvent(match, categoria);
+  return convertToCalendarEvent(match, match.CAT.includes('4') ? 'master' : 'open');
 }
 
 /**
- * Converte match in event
+ * Converte match in event (helper)
  */
 export function convertToCalendarEvent(
   match: MatchResult,
-  categoria: "master" | "open"
+  categoria: 'master' | 'open'
 ): CalendarEvent {
   const hasResult = match.SetA_Vinti && match.SetB_Vinti;
 
   return {
-    id: match["N. Gara"],
+    id: match['N. Gara'],
     data: match.Data,
-    ora: match.Ora || "",
-    squadraA: match["Squadra A"] || "",
-    squadraB: match["Squadra B"] || "",
-    palestra: match.PALESTRA || "",
-    note: match.NOTE || "",
+    ora: match.Ora || '',
+    squadraA: match['Squadra A'] || '',
+    squadraB: match['Squadra B'] || '',
+    palestra: match.PALESTRA || '',
+    note: match.NOTE || '',
     categoria,
-    categoriaOriginale: match.CAT || "",
+    categoriaOriginale: match.CAT || '',
     risultato: hasResult
       ? {
           setA: parseInt(match.SetA_Vinti) || 0,
           setB: parseInt(match.SetB_Vinti) || 0,
           punteggiSet: [
-            {
-              ptsA: parseInt(match["1_SET_PTS_A"]) || 0,
-              ptsB: parseInt(match["1_SET_PTS_B"]) || 0,
-            },
-            {
-              ptsA: parseInt(match["2_SET_PTS_A"]) || 0,
-              ptsB: parseInt(match["2_SET_PTS_B"]) || 0,
-            },
-            {
-              ptsA: parseInt(match["3_SET_PTS_A"]) || 0,
-              ptsB: parseInt(match["3_SET_PTS_B"]) || 0,
-            },
-            {
-              ptsA: parseInt(match["4_SET_PTS_A"]) || 0,
-              ptsB: parseInt(match["4_SET_PTS_B"]) || 0,
-            },
-            {
-              ptsA: parseInt(match["5_SET_PTS_A"]) || 0,
-              ptsB: parseInt(match["5_SET_PTS_B"]) || 0,
-            },
+            { ptsA: parseInt(match['1_SET_PTS_A']) || 0, ptsB: parseInt(match['1_SET_PTS_B']) || 0 },
+            { ptsA: parseInt(match['2_SET_PTS_A']) || 0, ptsB: parseInt(match['2_SET_PTS_B']) || 0 },
+            { ptsA: parseInt(match['3_SET_PTS_A']) || 0, ptsB: parseInt(match['3_SET_PTS_B']) || 0 },
+            { ptsA: parseInt(match['4_SET_PTS_A']) || 0, ptsB: parseInt(match['4_SET_PTS_B']) || 0 },
+            { ptsA: parseInt(match['5_SET_PTS_A']) || 0, ptsB: parseInt(match['5_SET_PTS_B']) || 0 },
           ].filter((set) => set.ptsA > 0 || set.ptsB > 0),
         }
       : undefined,
@@ -122,47 +222,68 @@ export function convertToCalendarEvent(
 }
 
 /**
- * Tutti gli eventi
+ * Tutti gli eventi calendario dal database
  */
-export function getAllCalendarEvents(): CalendarEvent[] {
-  const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
-  const openPath = path.join(process.cwd(), "content/campionati/open.csv");
+export async function getAllCalendarEventsAsync(): Promise<CalendarEvent[]> {
+  const { data, error } = await supabase
+    .from('matches')
+    .select('*')
+    .order('data', { ascending: true });
 
-  const masterMatches = readCampionatoCSV(masterPath);
-  const openMatches = readCampionatoCSV(openPath);
+  if (error) {
+    console.error('Errore getAllCalendarEventsAsync:', error);
+    return [];
+  }
 
-  const masterEvents = masterMatches.map((m) =>
-    convertToCalendarEvent(m, "master")
-  );
-  const openEvents = openMatches.map((m) => convertToCalendarEvent(m, "open"));
-
-  const allEvents = [...masterEvents, ...openEvents].sort((a, b) => {
-    const dateA = parseItalianDate(a.data);
-    const dateB = parseItalianDate(b.data);
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  return allEvents;
+  return (data || []).map(dbToCalendarEvent);
 }
 
 /**
- * Calcola classifica
+ * Tutti gli eventi calendario (versione sincrona legacy)
+ * @deprecated Usa getAllCalendarEventsAsync
+ */
+export function getAllCalendarEvents(): CalendarEvent[] {
+  console.warn('getAllCalendarEvents sincrono è deprecato. Usa getAllCalendarEventsAsync');
+  return [];
+}
+
+/**
+ * Calcola classifica dal database
+ */
+export async function calculateRankingAsync(categoria: 'master' | 'open'): Promise<Ranking[]> {
+  const { data: matches, error } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('categoria', categoria);
+
+  if (error) {
+    console.error(`Errore calculateRankingAsync(${categoria}):`, error);
+    return [];
+  }
+
+  // Usa la stessa logica del ranking originale
+  const matchResults = (matches || []).map(dbToMatchResult);
+  return calculateRanking(matchResults);
+}
+
+/**
+ * Calcola classifica (versione originale, funziona con MatchResult[])
  */
 export function calculateRanking(matches: MatchResult[]): Ranking[] {
   const rankingMap = new Map<string, Ranking>();
   const allTeams = new Set<string>();
 
   for (const match of matches) {
-    if (match["Squadra A"]) allTeams.add(match["Squadra A"].trim());
-    if (match["Squadra B"]) allTeams.add(match["Squadra B"].trim());
+    if (match['Squadra A']) allTeams.add(match['Squadra A'].trim());
+    if (match['Squadra B']) allTeams.add(match['Squadra B'].trim());
   }
 
   for (const team of allTeams) {
     if (
       team.length > 0 &&
-      team !== "Squadra A" &&
-      team !== "Squadra B" &&
-      team !== "RIPOSO"
+      team !== 'Squadra A' &&
+      team !== 'Squadra B' &&
+      team !== 'RIPOSO'
     ) {
       rankingMap.set(team, {
         squadra: team,
@@ -176,10 +297,10 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
   }
 
   for (const match of matches) {
-    const teamA = match["Squadra A"]?.trim();
-    const teamB = match["Squadra B"]?.trim();
+    const teamA = match['Squadra A']?.trim();
+    const teamB = match['Squadra B']?.trim();
 
-    if (match.SetA_Vinti === "" || match.SetB_Vinti === "") {
+    if (match.SetA_Vinti === '' || match.SetB_Vinti === '') {
       continue;
     }
 
@@ -197,11 +318,7 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
       continue;
     }
 
-    const updateStats = (
-      teamName: string,
-      setsWon: number,
-      setsLost: number
-    ) => {
+    const updateStats = (teamName: string, setsWon: number, setsLost: number) => {
       const stats = rankingMap.get(teamName)!;
       stats.partiteGiocate += 1;
       stats.setVinti += setsWon;
@@ -227,8 +344,7 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
     .filter((team) => team.partiteGiocate > 0)
     .sort((a, b) => {
       if (b.punti !== a.punti) return b.punti - a.punti;
-      if (b.quozienteSet !== a.quozienteSet)
-        return b.quozienteSet - a.quozienteSet;
+      if (b.quozienteSet !== a.quozienteSet) return b.quozienteSet - a.quozienteSet;
       return 0;
     });
 

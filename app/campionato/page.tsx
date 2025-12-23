@@ -1,28 +1,18 @@
-import path from "path";
 import {
-  readCampionatoCSV,
-  calculateRanking,
-  getAllCalendarEvents,
+  calculateRankingAsync,
+  getAllCalendarEventsAsync,
 } from "@/lib/campionato";
-import { getCategoriaLabel } from "@/lib/campionato-types";
 import CalendarView from "@/components/CalendarView";
 import RankingTable from "@/components/RankingTable";
-import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 
-export default function CampionatoPage() {
-  // Leggi dati Master
-  const masterPath = path.join(process.cwd(), "content/campionati/master.csv");
-  const masterMatches = readCampionatoCSV(masterPath);
-  const masterRanking = calculateRanking(masterMatches);
-
-  // Leggi dati Open
-  const openPath = path.join(process.cwd(), "content/campionati/open.csv");
-  const openMatches = readCampionatoCSV(openPath);
-  const openRanking = calculateRanking(openMatches);
-
-  // Eventi calendario
-  const allEvents = getAllCalendarEvents();
+export default async function CampionatoPage() {
+  // Carica dati dal database
+  const [masterRanking, openRanking, allEvents] = await Promise.all([
+    calculateRankingAsync("master"),
+    calculateRankingAsync("open"),
+    getAllCalendarEventsAsync(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +110,9 @@ export default function CampionatoPage() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 dark:border-green-800 dark:bg-green-950 dark:hover:bg-green-900 transition-colors"
             >
-              <span className="text-sm font-medium">Campionato Open 3x3 girone B UISP</span>
+              <span className="text-sm font-medium">
+                Campionato Open 3x3 girone B UISP
+              </span>
               <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
             </a>
             <a
@@ -129,7 +121,9 @@ export default function CampionatoPage() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800 transition-colors"
             >
-              <span className="text-sm font-medium">Regolamento Volley UISP</span>
+              <span className="text-sm font-medium">
+                Regolamento Volley UISP
+              </span>
               <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
             </a>
           </div>
