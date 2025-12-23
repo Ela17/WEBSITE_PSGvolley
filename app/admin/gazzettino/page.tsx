@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -41,13 +39,11 @@ interface Article {
   date: string;
   week: number | null;
   season: string | null;
-  squadra: string;
   author: string | null;
   excerpt: string | null;
 }
 
 export default function AdminGazzettinoPage() {
-  const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,7 +54,7 @@ export default function AdminGazzettinoPage() {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/gazzettino");
+      const res = await fetch("/api/admin/gazzettino");
       const data = await res.json();
 
       if (data.error) {
@@ -84,7 +80,7 @@ export default function AdminGazzettinoPage() {
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/gazzettino/${deleteSlug}`, {
+      const res = await fetch(`/api/admin/gazzettino/${deleteSlug}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -171,7 +167,6 @@ export default function AdminGazzettinoPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Titolo</TableHead>
-                    <TableHead>Squadra</TableHead>
                     <TableHead>Giornata</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Autore</TableHead>
@@ -182,7 +177,7 @@ export default function AdminGazzettinoPage() {
                   {articles.map((article) => (
                     <TableRow key={article.id}>
                       <TableCell>
-                        <div className="max-w-xs">
+                        <div className="max-w-md">
                           <p className="font-medium truncate">
                             {article.title}
                           </p>
@@ -190,15 +185,6 @@ export default function AdminGazzettinoPage() {
                             /{article.slug}
                           </p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            article.squadra === "MASTER 4+2" ? "master" : "open"
-                          }
-                        >
-                          {article.squadra === "MASTER 4+2" ? "Master" : "Open"}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         {article.week ? `G${article.week}` : "-"}

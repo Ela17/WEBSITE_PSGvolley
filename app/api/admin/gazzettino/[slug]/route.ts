@@ -69,7 +69,6 @@ export async function PUT(
         season: body.season || null,
         excerpt: body.excerpt || null,
         cover_image: body.coverImage || null,
-        squadra: body.squadra,
         category: body.category || null,
         author: body.author || null,
         tags: body.tags || [],

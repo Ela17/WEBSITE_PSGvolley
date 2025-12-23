@@ -71,7 +71,7 @@ export default function AdminEventiPage() {
   const fetchEventi = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/eventi");
+      const res = await fetch("/api/admin/eventi");
       const data = await res.json();
 
       if (data.error) {
@@ -97,7 +97,7 @@ export default function AdminEventiPage() {
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/eventi/${deleteSlug}`, {
+      const res = await fetch(`/api/admin/eventi/${deleteSlug}`, {
         method: "DELETE",
       });
       const data = await res.json();

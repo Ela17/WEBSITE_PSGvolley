@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
 
     // Validazione campi obbligatori
-    if (!body.slug || !body.title || !body.date || !body.squadra) {
+    if (!body.slug || !body.title || !body.date ) {
       return NextResponse.json(
-        { error: "Campi obbligatori mancanti: slug, title, date, squadra" },
+        { error: "Campi obbligatori mancanti: slug, title, date" },
         { status: 400 }
       );
     }
@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
         season: body.season || null,
         excerpt: body.excerpt || null,
         cover_image: body.coverImage || null,
-        squadra: body.squadra,
         category: body.category || null,
         author: body.author || null,
         tags: body.tags || [],

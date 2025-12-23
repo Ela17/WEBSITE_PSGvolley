@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -32,20 +31,22 @@ import {
   X,
   CheckCircle,
   Clock,
+  Search,
+  CalendarCog,
 } from "lucide-react";
 
 interface Match {
-  id: number;
-  n_gara: string;
+  id: string;
+  numero_gara: string;
   data: string;
-  ora: string;
+  ora: string | null;
   squadra_a: string;
   squadra_b: string;
-  palestra: string;
-  note: string;
+  palestra: string | null;
+  note: string | null;
   categoria: string;
-  set_a: number | null;
-  set_b: number | null;
+  set_a_vinti: number | null;
+  set_b_vinti: number | null;
   punteggi_set: Array<{ pts_a: number; pts_b: number }> | null;
 }
 
@@ -54,12 +55,14 @@ export default function AdminCampionatoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editMatch, setEditMatch] = useState<Match | null>(null);
+  const [editDetailsMatch, setEditDetailsMatch] = useState<Match | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Form risultato
   const [resultForm, setResultForm] = useState({
-    set_a: "",
-    set_b: "",
+    set_a_vinti: "",
+    set_b_vinti: "",
     set1_a: "",
     set1_b: "",
     set2_a: "",
@@ -72,11 +75,19 @@ export default function AdminCampionatoPage() {
     set5_b: "",
   });
 
+  // Form dettagli partita (data/ora/luogo)
+  const [detailsForm, setDetailsForm] = useState({
+    data: "",
+    ora: "",
+    palestra: "",
+    note: "",
+  });
+
   // Carica partite
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/campionato");
+      const res = await fetch("/api/admin/campionato");
       const data = await res.json();
 
       if (data.error) {
@@ -101,8 +112,8 @@ export default function AdminCampionatoPage() {
     setEditMatch(match);
     const punteggi = match.punteggi_set || [];
     setResultForm({
-      set_a: match.set_a?.toString() || "",
-      set_b: match.set_b?.toString() || "",
+      set_a_vinti: match.set_a_vinti?.toString() || "",
+      set_b_vinti: match.set_b_vinti?.toString() || "",
       set1_a: punteggi[0]?.pts_a?.toString() || "",
       set1_b: punteggi[0]?.pts_b?.toString() || "",
       set2_a: punteggi[1]?.pts_a?.toString() || "",
@@ -114,6 +125,63 @@ export default function AdminCampionatoPage() {
       set5_a: punteggi[4]?.pts_a?.toString() || "",
       set5_b: punteggi[4]?.pts_b?.toString() || "",
     });
+  };
+
+  // Apri dialog modifica dettagli (data/ora/luogo)
+  const openDetailsDialog = (match: Match) => {
+    setEditDetailsMatch(match);
+    setDetailsForm({
+      data: match.data?.split("T")[0] || "",
+      ora: match.ora || "",
+      palestra: match.palestra || "",
+      note: match.note || "",
+    });
+  };
+
+  // Salva dettagli partita
+  const handleSaveDetails = async () => {
+    if (!editDetailsMatch) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/campionato/${editDetailsMatch.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: detailsForm.data || null,
+          ora: detailsForm.ora || null,
+          palestra: detailsForm.palestra || null,
+          note: detailsForm.note || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Aggiorna lista locale
+        setMatches(
+          matches.map((m) =>
+            m.id === editDetailsMatch.id
+              ? {
+                  ...m,
+                  data: data.match.data,
+                  ora: data.match.ora,
+                  palestra: data.match.palestra,
+                  note: data.match.note,
+                }
+              : m
+          )
+        );
+        setEditDetailsMatch(null);
+      } else {
+        setError(data.error || "Errore durante il salvataggio");
+      }
+    } catch (err) {
+      setError("Errore durante il salvataggio");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Salva risultato
@@ -155,12 +223,16 @@ export default function AdminCampionatoPage() {
         });
       }
 
-      const res = await fetch(`/api/campionato/${editMatch.id}`, {
+      const res = await fetch(`/api/admin/campionato/${editMatch.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          set_a: resultForm.set_a ? parseInt(resultForm.set_a) : null,
-          set_b: resultForm.set_b ? parseInt(resultForm.set_b) : null,
+          set_a_vinti: resultForm.set_a_vinti
+            ? parseInt(resultForm.set_a_vinti)
+            : null,
+          set_b_vinti: resultForm.set_b_vinti
+            ? parseInt(resultForm.set_b_vinti)
+            : null,
           punteggi_set: punteggiSet.length > 0 ? punteggiSet : null,
         }),
       });
@@ -174,8 +246,8 @@ export default function AdminCampionatoPage() {
             m.id === editMatch.id
               ? {
                   ...m,
-                  set_a: data.match.set_a,
-                  set_b: data.match.set_b,
+                  set_a_vinti: data.match.set_a_vinti,
+                  set_b_vinti: data.match.set_b_vinti,
                   punteggi_set: data.match.punteggi_set,
                 }
               : m
@@ -203,20 +275,78 @@ export default function AdminCampionatoPage() {
     });
   };
 
+  // Determina se una partita ha un risultato
+  const hasResult = (match: Match): boolean => {
+    return match.set_a_vinti !== null && match.set_b_vinti !== null;
+  };
+
+  // Determina se una partita è futura (basandosi sulla data)
+  const isFutureMatch = (match: Match): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const matchDate = new Date(match.data);
+    matchDate.setHours(0, 0, 0, 0);
+    return matchDate >= today;
+  };
+
   // Filtra partite per categoria
   const masterMatches = matches.filter((m) => m.categoria === "master");
   const openMatches = matches.filter((m) => m.categoria === "open");
 
+  // Filtra per ricerca (numero gara o squadre)
+  const filterBySearch = (matchList: Match[]): Match[] => {
+    if (!searchQuery.trim()) return matchList;
+    const query = searchQuery.toLowerCase().trim();
+    return matchList.filter(
+      (m) =>
+        m.numero_gara.toLowerCase().includes(query) ||
+        m.squadra_a.toLowerCase().includes(query) ||
+        m.squadra_b.toLowerCase().includes(query)
+    );
+  };
+
+  const filteredMasterMatches = filterBySearch(masterMatches);
+  const filteredOpenMatches = filterBySearch(openMatches);
+
   // Componente tabella partite
   const MatchesTable = ({
     matches,
-    categoria,
   }: {
     matches: Match[];
     categoria: string;
   }) => {
-    const played = matches.filter((m) => m.set_a !== null);
-    const upcoming = matches.filter((m) => m.set_a === null);
+    // Se la ricerca non trova nulla
+    if (matches.length === 0 && searchQuery) {
+      return (
+        <div className="text-center py-12">
+          <Search className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+          <p className="text-muted-foreground">
+            Nessuna partita trovata per "{searchQuery}"
+          </p>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => setSearchQuery("")}
+            className="mt-2"
+          >
+            Cancella ricerca
+          </Button>
+        </div>
+      );
+    }
+
+    // Partite da giocare: future O senza risultato
+    const upcoming = matches.filter((m) => !hasResult(m) || isFutureMatch(m));
+    // Partite giocate: hanno risultato E sono passate
+    const played = matches.filter((m) => hasResult(m) && !isFutureMatch(m));
+
+    // Ordina: upcoming per data crescente, played per data decrescente
+    const sortedUpcoming = [...upcoming].sort(
+      (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+    );
+    const sortedPlayed = [...played].sort(
+      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
 
     return (
       <div className="space-y-6">
@@ -224,9 +354,9 @@ export default function AdminCampionatoPage() {
         <div>
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <Clock className="w-5 h-5 text-orange-500" />
-            Da giocare ({upcoming.length})
+            Da giocare ({sortedUpcoming.length})
           </h3>
-          {upcoming.length === 0 ? (
+          {sortedUpcoming.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               Nessuna partita in programma
             </p>
@@ -234,44 +364,68 @@ export default function AdminCampionatoPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">N°</TableHead>
+                  <TableHead className="w-24">N° Gara</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Squadra A</TableHead>
-                  <TableHead className="text-center">vs</TableHead>
+                  <TableHead className="text-center w-16">vs</TableHead>
                   <TableHead>Squadra B</TableHead>
                   <TableHead>Ora</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {upcoming.slice(0, 15).map((match) => (
+                {sortedUpcoming.slice(0, 20).map((match) => (
                   <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm">
-                      {match.n_gara}
+                    <TableCell className="font-mono text-sm font-medium">
+                      {match.numero_gara}
                     </TableCell>
                     <TableCell>{formatDate(match.data)}</TableCell>
                     <TableCell className="font-medium">
-                      {match.squadra_a.replace("ASD ", "")}
+                      {match.squadra_a
+                        .replace("ASD ", "")
+                        .replace("Patr.", "P.")}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">
-                      vs
+                      -
                     </TableCell>
                     <TableCell className="font-medium">
-                      {match.squadra_b.replace("ASD ", "")}
+                      {match.squadra_b
+                        .replace("ASD ", "")
+                        .replace("Patr.", "P.")}
                     </TableCell>
                     <TableCell>{match.ora || "-"}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(match)}
-                        title="Inserisci risultato"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDetailsDialog(match)}
+                          title="Modifica data/ora/luogo"
+                        >
+                          <CalendarCog className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(match)}
+                          title="Inserisci risultato"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
+                {sortedUpcoming.length > 20 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-muted-foreground"
+                    >
+                      ... e altre {sortedUpcoming.length - 20} partite
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           )}
@@ -281,9 +435,9 @@ export default function AdminCampionatoPage() {
         <div>
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            Giocate ({played.length})
+            Giocate ({sortedPlayed.length})
           </h3>
-          {played.length === 0 ? (
+          {sortedPlayed.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               Nessuna partita giocata
             </p>
@@ -291,7 +445,7 @@ export default function AdminCampionatoPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">N°</TableHead>
+                  <TableHead className="w-24">N° Gara</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Squadra A</TableHead>
                   <TableHead className="text-center">Risultato</TableHead>
@@ -300,32 +454,46 @@ export default function AdminCampionatoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {played.map((match) => (
+                {sortedPlayed.map((match) => (
                   <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm">
-                      {match.n_gara}
+                    <TableCell className="font-mono text-sm font-medium">
+                      {match.numero_gara}
                     </TableCell>
                     <TableCell>{formatDate(match.data)}</TableCell>
                     <TableCell className="font-medium">
-                      {match.squadra_a.replace("ASD ", "")}
+                      {match.squadra_a
+                        .replace("ASD ", "")
+                        .replace("Patr.", "P.")}
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="font-bold text-lg">
-                        {match.set_a} - {match.set_b}
+                        {match.set_a_vinti} - {match.set_b_vinti}
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {match.squadra_b.replace("ASD ", "")}
+                      {match.squadra_b
+                        .replace("ASD ", "")
+                        .replace("Patr.", "P.")}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(match)}
-                        title="Modifica risultato"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDetailsDialog(match)}
+                          title="Modifica data/ora/luogo"
+                        >
+                          <CalendarCog className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(match)}
+                          title="Modifica risultato"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -370,7 +538,30 @@ export default function AdminCampionatoPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Partite Campionato</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle>
+                Partite Campionato ({matches.length} totali)
+              </CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca N° gara o squadra..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -381,19 +572,35 @@ export default function AdminCampionatoPage() {
               <Tabs defaultValue="master">
                 <TabsList className="mb-6">
                   <TabsTrigger value="master">
-                    MASTER 4+2 ({masterMatches.length})
+                    MASTER 4+2 ({filteredMasterMatches.length}
+                    {searchQuery &&
+                    filteredMasterMatches.length !== masterMatches.length
+                      ? ` / ${masterMatches.length}`
+                      : ""}
+                    )
                   </TabsTrigger>
                   <TabsTrigger value="open">
-                    OPEN 3×3 ({openMatches.length})
+                    OPEN 3×3 ({filteredOpenMatches.length}
+                    {searchQuery &&
+                    filteredOpenMatches.length !== openMatches.length
+                      ? ` / ${openMatches.length}`
+                      : ""}
+                    )
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="master">
-                  <MatchesTable matches={masterMatches} categoria="master" />
+                  <MatchesTable
+                    matches={filteredMasterMatches}
+                    categoria="master"
+                  />
                 </TabsContent>
 
                 <TabsContent value="open">
-                  <MatchesTable matches={openMatches} categoria="open" />
+                  <MatchesTable
+                    matches={filteredOpenMatches}
+                    categoria="open"
+                  />
                 </TabsContent>
               </Tabs>
             )}
@@ -406,7 +613,8 @@ export default function AdminCampionatoPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editMatch?.set_a !== null ? "Modifica" : "Inserisci"} Risultato
+              {editMatch?.set_a_vinti !== null ? "Modifica" : "Inserisci"}{" "}
+              Risultato
             </DialogTitle>
           </DialogHeader>
 
@@ -415,7 +623,8 @@ export default function AdminCampionatoPage() {
               {/* Info partita */}
               <div className="bg-muted/50 rounded-lg p-3 text-center">
                 <p className="text-sm text-muted-foreground mb-1">
-                  {formatDate(editMatch.data)} - {editMatch.ora || "Ora TBD"}
+                  Gara {editMatch.numero_gara} • {formatDate(editMatch.data)} •{" "}
+                  {editMatch.ora || "Ora TBD"}
                 </p>
                 <p className="font-semibold">
                   {editMatch.squadra_a.replace("ASD ", "")} vs{" "}
@@ -431,9 +640,12 @@ export default function AdminCampionatoPage() {
                     type="number"
                     min="0"
                     max="3"
-                    value={resultForm.set_a}
+                    value={resultForm.set_a_vinti}
                     onChange={(e) =>
-                      setResultForm({ ...resultForm, set_a: e.target.value })
+                      setResultForm({
+                        ...resultForm,
+                        set_a_vinti: e.target.value,
+                      })
                     }
                     className="text-center text-xl font-bold"
                     placeholder="0"
@@ -443,9 +655,12 @@ export default function AdminCampionatoPage() {
                     type="number"
                     min="0"
                     max="3"
-                    value={resultForm.set_b}
+                    value={resultForm.set_b_vinti}
                     onChange={(e) =>
-                      setResultForm({ ...resultForm, set_b: e.target.value })
+                      setResultForm({
+                        ...resultForm,
+                        set_b_vinti: e.target.value,
+                      })
                     }
                     className="text-center text-xl font-bold"
                     placeholder="0"
@@ -516,6 +731,123 @@ export default function AdminCampionatoPage() {
               Annulla
             </Button>
             <Button onClick={handleSaveResult} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salva
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog modifica dettagli (data/ora/luogo) */}
+      <Dialog
+        open={!!editDetailsMatch}
+        onOpenChange={() => setEditDetailsMatch(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarCog className="w-5 h-5" />
+              Modifica Data/Ora/Luogo
+            </DialogTitle>
+          </DialogHeader>
+
+          {editDetailsMatch && (
+            <div className="space-y-4">
+              {/* Info partita */}
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Gara {editDetailsMatch.numero_gara}
+                </p>
+                <p className="font-semibold">
+                  {editDetailsMatch.squadra_a.replace("ASD ", "")} vs{" "}
+                  {editDetailsMatch.squadra_b.replace("ASD ", "")}
+                </p>
+              </div>
+
+              {/* Data */}
+              <div>
+                <Label htmlFor="data" className="mb-2 block">
+                  Data
+                </Label>
+                <Input
+                  id="data"
+                  type="date"
+                  value={detailsForm.data}
+                  onChange={(e) =>
+                    setDetailsForm({ ...detailsForm, data: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Ora */}
+              <div>
+                <Label htmlFor="ora" className="mb-2 block">
+                  Orario
+                </Label>
+                <Input
+                  id="ora"
+                  type="text"
+                  value={detailsForm.ora}
+                  onChange={(e) =>
+                    setDetailsForm({ ...detailsForm, ora: e.target.value })
+                  }
+                  placeholder="es. 21:00"
+                />
+              </div>
+
+              {/* Palestra */}
+              <div>
+                <Label htmlFor="palestra" className="mb-2 block">
+                  Palestra / Luogo
+                </Label>
+                <Input
+                  id="palestra"
+                  type="text"
+                  value={detailsForm.palestra}
+                  onChange={(e) =>
+                    setDetailsForm({ ...detailsForm, palestra: e.target.value })
+                  }
+                  placeholder="es. Via Baiardi 4, Torino"
+                />
+              </div>
+
+              {/* Note */}
+              <div>
+                <Label htmlFor="note" className="mb-2 block">
+                  Note
+                </Label>
+                <Input
+                  id="note"
+                  type="text"
+                  value={detailsForm.note}
+                  onChange={(e) =>
+                    setDetailsForm({ ...detailsForm, note: e.target.value })
+                  }
+                  placeholder="es. Partita rinviata, ingresso dal retro..."
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDetailsMatch(null)}
+              disabled={saving}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Annulla
+            </Button>
+            <Button onClick={handleSaveDetails} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

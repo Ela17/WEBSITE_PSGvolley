@@ -51,7 +51,7 @@ export default function ModificaEventoPage({
   useEffect(() => {
     const fetchEvento = async () => {
       try {
-        const res = await fetch(`/api/eventi/${slug}`);
+        const res = await fetch(`/api/admin/eventi/${slug}`);
         const data = await res.json();
 
         if (data.error) {
@@ -95,7 +95,7 @@ export default function ModificaEventoPage({
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/eventi/${slug}`, {
+      const res = await fetch(`/api/admin/eventi/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

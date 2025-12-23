@@ -53,9 +53,11 @@ export async function PUT(
     if (body.palestra !== undefined) updateData.palestra = body.palestra;
     if (body.note !== undefined) updateData.note = body.note;
 
-    // Risultati
-    if (body.set_a !== undefined) updateData.set_a = body.set_a;
-    if (body.set_b !== undefined) updateData.set_b = body.set_b;
+    // Risultati - nomi corretti dal database
+    if (body.set_a_vinti !== undefined)
+      updateData.set_a_vinti = body.set_a_vinti;
+    if (body.set_b_vinti !== undefined)
+      updateData.set_b_vinti = body.set_b_vinti;
     if (body.punteggi_set !== undefined)
       updateData.punteggi_set = body.punteggi_set;
 

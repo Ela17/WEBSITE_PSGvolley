@@ -8,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileText } from "lucide-react";
 import { use } from "react";
 
@@ -35,7 +28,6 @@ export default function ModificaArticoloPage({
     date: "",
     week: "",
     season: "",
-    squadra: "MASTER 4+2",
     category: "",
     author: "",
     excerpt: "",
@@ -48,7 +40,7 @@ export default function ModificaArticoloPage({
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const res = await fetch(`/api/gazzettino/${slug}`);
+        const res = await fetch(`/api/admin/gazzettino/${slug}`);
         const data = await res.json();
 
         if (data.error) {
@@ -61,7 +53,6 @@ export default function ModificaArticoloPage({
             date: article.date?.split("T")[0] || "",
             week: article.week?.toString() || "",
             season: article.season || "",
-            squadra: article.squadra || "MASTER 4+2",
             category: article.category || "",
             author: article.author || "",
             excerpt: article.excerpt || "",
@@ -87,7 +78,7 @@ export default function ModificaArticoloPage({
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/gazzettino/${slug}`, {
+      const res = await fetch(`/api/admin/gazzettino/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -174,7 +165,7 @@ export default function ModificaArticoloPage({
                     onChange={(e) =>
                       setForm({ ...form, title: e.target.value })
                     }
-                    placeholder="Es: La 4+2 trionfa nel derby cittadino"
+                    placeholder="Es: Vittoria in rimonta per il PSG"
                     required
                   />
                 </div>
@@ -185,7 +176,7 @@ export default function ModificaArticoloPage({
                     id="slug"
                     value={form.slug}
                     onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                    placeholder="la-4-2-trionfa-nel-derby"
+                    placeholder="vittoria-in-rimonta-per-il-psg"
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -202,24 +193,6 @@ export default function ModificaArticoloPage({
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     required
                   />
-                </div>
-
-                <div>
-                  <Label htmlFor="squadra">Squadra *</Label>
-                  <Select
-                    value={form.squadra}
-                    onValueChange={(value) =>
-                      setForm({ ...form, squadra: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MASTER 4+2">MASTER 4+2</SelectItem>
-                      <SelectItem value="OPEN 3×3">OPEN 3×3</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div>
@@ -256,6 +229,18 @@ export default function ModificaArticoloPage({
                       setForm({ ...form, author: e.target.value })
                     }
                     placeholder="Es: Redazione PSG"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="category">Categoria</Label>
+                  <Input
+                    id="category"
+                    value={form.category}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
+                    placeholder="Es: Cronaca Partita"
                   />
                 </div>
               </div>
@@ -315,23 +300,11 @@ export default function ModificaArticoloPage({
                   onChange={(e) =>
                     setForm({ ...form, coverImage: e.target.value })
                   }
-                  placeholder="/images/gazzettino/master/giornata-5/cover.jpg"
+                  placeholder="/images/gazzettino/giornata-5/cover.jpg"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Percorso relativo alla cartella public/
                 </p>
-              </div>
-
-              <div>
-                <Label htmlFor="category">Categoria</Label>
-                <Input
-                  id="category"
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value })
-                  }
-                  placeholder="Es: Campionato Master"
-                />
               </div>
 
               <div>

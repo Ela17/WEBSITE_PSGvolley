@@ -68,7 +68,7 @@ export default function NuovoEventoPage() {
     setSaving(true);
 
     try {
-      const res = await fetch("/api/eventi", {
+      const res = await fetch("/api/admin/eventi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
