@@ -1,7 +1,7 @@
-import { supabase, DBEvento } from './supabase';
-import { remark } from 'remark';
-import html from 'remark-html';
-import remarkGfm from 'remark-gfm';
+import { supabase, DBEvento } from "./supabase";
+import { remark } from "remark";
+import html from "remark-html";
+import remarkGfm from "remark-gfm";
 
 // Interfacce compatibili con il codice esistente
 export interface Evento {
@@ -12,7 +12,7 @@ export interface Evento {
   locationLink?: string;
   description: string;
   coverImage: string;
-  type: 'torneo' | 'amichevole' | 'evento-sociale' | 'altro';
+  type: "torneo" | "amichevole" | "evento-sociale" | "altro";
   category: string;
   images?: string[];
   imagesFolder?: string;
@@ -25,7 +25,7 @@ export interface Evento {
   locandina?: string | null;
 }
 
-export interface EventoPreview extends Omit<Evento, 'content'> {}
+export interface EventoPreview extends Omit<Evento, "content"> {}
 
 // Converte da formato DB a formato app
 function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
@@ -33,12 +33,12 @@ function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
     slug: e.slug,
     title: e.title,
     date: e.date,
-    location: e.location || '',
+    location: e.location || "",
     locationLink: e.location_link || undefined,
     description: e.description,
-    coverImage: e.cover_image || '',
+    coverImage: e.cover_image || "",
     type: e.type,
-    category: e.category || '',
+    category: e.category || "",
     images: e.images || [],
     imagesFolder: e.images_folder || undefined,
     results: e.results || undefined,
@@ -46,7 +46,7 @@ function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
     registrationDeadline: e.registration_deadline || undefined,
     fee: e.fee || undefined,
     tags: e.tags || [],
-    content: includeContent ? e.content : '',
+    content: includeContent ? e.content : "",
     locandina: e.locandina,
   };
 }
@@ -56,63 +56,71 @@ function dbToPreview(e: DBEvento): EventoPreview {
   return rest as EventoPreview;
 }
 
-// Legge tutti gli eventi futuri (is_past = false)
+// Helper per ottenere la data di oggi in formato YYYY-MM-DD
+function getTodayString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+// Legge tutti gli eventi futuri (data >= oggi)
 export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
+  const today = getTodayString();
+
   const { data, error } = await supabase
-    .from('eventi')
-    .select('*')
-    .eq('is_past', false)
-    .order('date', { ascending: true }); // Futuri ordinati per data crescente
+    .from("eventi")
+    .select("*")
+    .gte("date", today)
+    .order("date", { ascending: true }); // Futuri ordinati per data crescente
 
   if (error) {
-    console.error('Errore getAllEventiFuturi:', error);
+    console.error("Errore getAllEventiFuturi:", error);
     return [];
   }
 
   return (data || [])
-    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .filter((e) => e.slug && e.slug !== "undefined" && e.slug !== "null")
     .map(dbToPreview);
 }
 
-// Legge tutti gli eventi passati (is_past = true)
+// Legge tutti gli eventi passati (data < oggi)
 export async function getAllEventiPassati(): Promise<EventoPreview[]> {
+  const today = getTodayString();
+
   const { data, error } = await supabase
-    .from('eventi')
-    .select('*')
-    .eq('is_past', true)
-    .order('date', { ascending: false }); // Passati ordinati per data decrescente
+    .from("eventi")
+    .select("*")
+    .lt("date", today)
+    .order("date", { ascending: false }); // Passati ordinati per data decrescente
 
   if (error) {
-    console.error('Errore getAllEventiPassati:', error);
+    console.error("Errore getAllEventiPassati:", error);
     return [];
   }
 
   return (data || [])
-    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .filter((e) => e.slug && e.slug !== "undefined" && e.slug !== "null")
     .map(dbToPreview);
 }
 
 // Ottiene un singolo evento con contenuto completo
 export async function getEventoBySlug(
   slug: string,
-  type?: 'futuro' | 'passato'
+  type?: "futuro" | "passato"
 ): Promise<Evento | null> {
   // Controllo che lo slug sia valido
-  if (!slug || slug === 'undefined' || slug === 'null') {
-    console.error('Invalid slug provided:', slug);
+  if (!slug || slug === "undefined" || slug === "null") {
+    console.error("Invalid slug provided:", slug);
     return null;
   }
 
-  let query = supabase
-    .from('eventi')
-    .select('*')
-    .eq('slug', slug);
+  const today = getTodayString();
 
-  // Se specificato il tipo, filtra per is_past
-  if (type === 'futuro') {
-    query = query.eq('is_past', false);
-  } else if (type === 'passato') {
-    query = query.eq('is_past', true);
+  let query = supabase.from("eventi").select("*").eq("slug", slug);
+
+  // Se specificato il tipo, filtra per data
+  if (type === "futuro") {
+    query = query.gte("date", today);
+  } else if (type === "passato") {
+    query = query.lt("date", today);
   }
 
   const { data, error } = await query.single();
@@ -122,7 +130,7 @@ export async function getEventoBySlug(
     if (type) {
       return getEventoBySlug(slug);
     }
-    console.error('Errore getEventoBySlug:', error);
+    console.error("Errore getEventoBySlug:", error);
     return null;
   }
 
@@ -141,27 +149,31 @@ export async function getEventoBySlug(
 // Ottiene tutti gli eventi (futuri + passati)
 export async function getAllEventi(): Promise<EventoPreview[]> {
   const { data, error } = await supabase
-    .from('eventi')
-    .select('*')
-    .order('date', { ascending: false });
+    .from("eventi")
+    .select("*")
+    .order("date", { ascending: false });
 
   if (error) {
-    console.error('Errore getAllEventi:', error);
+    console.error("Errore getAllEventi:", error);
     return [];
   }
 
   return (data || [])
-    .filter(e => e.slug && e.slug !== 'undefined' && e.slug !== 'null')
+    .filter((e) => e.slug && e.slug !== "undefined" && e.slug !== "null")
     .map(dbToPreview);
 }
 
-// Controlla se un evento è passato (utility)
+// Controlla se un evento è passato (utility basata sulla data)
 export async function isEventoPast(slug: string): Promise<boolean> {
+  const today = getTodayString();
+
   const { data } = await supabase
-    .from('eventi')
-    .select('is_past')
-    .eq('slug', slug)
+    .from("eventi")
+    .select("date")
+    .eq("slug", slug)
     .single();
-  
-  return data?.is_past ?? false;
+
+  if (!data?.date) return false;
+
+  return data.date < today;
 }

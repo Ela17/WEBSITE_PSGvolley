@@ -62,6 +62,15 @@ export async function generateStaticParams() {
   return allSlugs;
 }
 
+// Helper per determinare se un evento è passato basandosi sulla data
+function isEventoPassato(eventDate: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const date = new Date(eventDate);
+  date.setHours(0, 0, 0, 0);
+  return date < today;
+}
+
 export default async function EventoDetailPage({
   params,
 }: {
@@ -69,20 +78,16 @@ export default async function EventoDetailPage({
 }) {
   const { slug } = await params;
 
-  // Prova prima negli eventi futuri (più recenti)
-  let evento = await getEventoBySlug(slug, "futuro");
-  let isPassato = false;
+  // Cerca l'evento (senza specificare tipo - lo determiniamo dalla data)
+  const evento = await getEventoBySlug(slug);
 
-  // Se non trovato, prova negli eventi passati
-  if (!evento) {
-    evento = await getEventoBySlug(slug, "passato");
-    isPassato = true;
-  }
-
-  // Se ancora non trovato, 404
+  // Se non trovato, 404
   if (!evento) {
     notFound();
   }
+
+  // Determina se è passato basandosi sulla data
+  const isPassato = isEventoPassato(evento.date);
 
   const Icon = iconMap[evento.type];
   const badgeColor = badgeColorMap[evento.type];

@@ -26,7 +26,7 @@ import {
   ArrowLeft,
   Trophy,
   Loader2,
-  Pencil,
+  Swords,
   Save,
   X,
   CheckCircle,
@@ -410,7 +410,7 @@ export default function AdminCampionatoPage() {
                           onClick={() => openEditDialog(match)}
                           title="Inserisci risultato"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Swords className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -491,7 +491,7 @@ export default function AdminCampionatoPage() {
                           onClick={() => openEditDialog(match)}
                           title="Modifica risultato"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Swords className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

@@ -24,8 +24,8 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 ### Architettura Attuale
 
 - **Hosting**: [Netlify](https://www.netlify.com/) con deploy automatico da Git
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL) - *migrazione in corso*
-- **Contenuti**: Ibrido file-based (Markdown + CSV) + Database
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Contenuti**: Database-driven con backup file-based (Markdown + CSV)
 - **Dominio**: Interno (netlify.app) - dominio personalizzato previsto per versione ufficiale futura
 
 ### Obiettivi del Progetto
@@ -39,16 +39,15 @@ Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG u
 
 ## 🚧 In Aggiornamento: Migrazione a Supabase
 
-Il progetto sta migrando da un'architettura completamente file-based a un **database Supabase** per permettere aggiornamenti dinamici senza rebuild.
+Il progetto è migrato da un'architettura completamente file-based a un **database Supabase** per permettere aggiornamenti dinamici senza rebuild.
 
 ### Stato della Migrazione
 
 | Componente | File-based | Database | Stato |
 |------------|:----------:|:--------:|:-----:|
-| Gazzettino | `content/gazzettino/*.md` | `gazzettino_articles` | ✅ Dati migrati |
-| Eventi | `content/eventi/**/*.md` | `eventi` | ✅ Dati migrati |
-| Partite | `content/campionati/*.csv` | `matches` | ✅ Dati migrati |
-| Codice Next.js | Legge da file | Legge da DB | 🔄 In corso |
+| Gazzettino | `content/gazzettino/*.md` | `gazzettino_articles` | ✅ Completato |
+| Eventi | `content/eventi/**/*.md` | `eventi` | ✅ Completato |
+| Partite | `content/campionati/*.csv` | `matches` | ✅ Completato |
 
 ### Schema Database
 
@@ -72,6 +71,7 @@ CREATE TABLE gazzettino_articles (
 );
 
 -- Eventi
+-- Nota: la distinzione futuro/passato si basa sulla data dell'evento (date >= oggi = futuro)
 CREATE TABLE eventi (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
@@ -91,7 +91,6 @@ CREATE TABLE eventi (
   tags TEXT[] DEFAULT '{}',
   content TEXT NOT NULL,
   locandina TEXT,
-  is_past BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -242,7 +241,7 @@ pallavolo-sito/
 │   ├── supabase.ts              # Client Supabase
 │   ├── campionato.ts            # Gestione dati campionati
 │   ├── campionato-types.ts      # Type definitions campionati
-│   ├── markdown.ts              # Gestione contenuti Gazzettino
+│   ├── gazzettino.ts            # Gestione contenuti Gazzettino
 │   ├── eventi.ts                # Gestione eventi
 │   ├── calendar-utils.ts        # Utility calendario
 │   ├── session.ts               # Gestione sessioni admin
@@ -343,18 +342,16 @@ Configurare in Site Settings → Environment Variables:
 
 ## 📝 Gestione dei Contenuti
 
-> **Nota**: Il sistema sta migrando da file statici a database. I file in `content/` sono mantenuti come backup e per compatibilità.
-
-### Database (Nuovo)
+### Database (Principale)
 
 I contenuti sono gestiti nel database Supabase:
 - **gazzettino_articles**: Articoli del Gazzettino
-- **eventi**: Eventi futuri e passati
+- **eventi**: Eventi (futuri e passati, distinti automaticamente dalla data)
 - **matches**: Partite dei campionati
 
-### File Markdown (Legacy/Backup)
+### File Markdown (Backup)
 
-I file markdown in `content/` rimangono come backup e per gli script di migrazione.
+I file markdown in `content/` sono mantenuti come backup e per gli script di migrazione.
 
 **Frontmatter Gazzettino:**
 ```yaml
@@ -427,7 +424,10 @@ tags: [torneo, open, primavera]
 ### Admin
 - ✅ Sistema autenticazione con iron-session
 - ✅ Login protetto
-- ✅ Dashboard admin (in sviluppo)
+- ✅ Dashboard admin
+- ✅ CRUD Gazzettino
+- ✅ CRUD Eventi
+- ✅ Gestione risultati partite
 
 ### UI/UX
 - ✅ Navbar sticky con indicatore pagina attiva
@@ -439,14 +439,9 @@ tags: [torneo, open, primavera]
 
 ## 🗺 Roadmap
 
-### In Corso
-- 🔄 **Migrazione a Supabase** - Lettura contenuti da database
-- 🔄 **Zona Admin** per gestione contenuti via web
-
 ### Prossimi Passi
-- 📝 Editor visuale per articoli Gazzettino
-- 📝 Gestione eventi da admin panel
-- 📝 Aggiornamento risultati partite da admin
+- 📝 Upload immagini diretto da admin panel (Supabase Storage)
+- 📝 Editor visuale WYSIWYG per articoli
 
 ### Evoluzione Futura
 - 🌐 **Dominio personalizzato**
@@ -460,9 +455,6 @@ Elena Derosas ([GitHub: @Ela17](https://github.com/Ela17))
 
 **Per:**  
 Sezione Pallavolo - ASD Patrocinio San Giuseppe, Torino
-
-**Sponsor:**  
-[Patago](https://www.patago.it/)
 
 ## 📄 Licenza
 

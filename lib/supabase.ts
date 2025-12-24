@@ -38,7 +38,7 @@ export interface DBEvento {
   tags: string[];
   content: string;
   locandina: string | null;
-  is_past: boolean;
+  // is_past rimosso - ora si usa la data per determinare se è passato
   created_at: string;
   updated_at: string;
 }
