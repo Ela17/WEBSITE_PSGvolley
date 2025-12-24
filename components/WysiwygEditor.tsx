@@ -1,27 +1,16 @@
 "use client";
 
 import { useEditor, EditorContent } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
+import { Placeholder } from '@tiptap/extensions';
+import { CharacterCount } from '@tiptap/extensions';
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import Emoji, { gitHubEmojis } from "@tiptap/extension-emoji";
 import TextAlign from "@tiptap/extension-text-align";
-import { Placeholder } from "@tiptap/extensions";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table/row";
-import { TableCell } from "@tiptap/extension-table/cell";
-import { TableHeader } from "@tiptap/extension-table/header";
-import { useCallback, useEffect } from "react";
+import Underline from "@tiptap/extension-underline";
+import { Emoji, gitHubEmojis } from "@tiptap/extension-emoji";
+
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -31,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+
 import {
   Bold,
   Italic,
@@ -47,32 +37,42 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Code,
+  Heading2,
+  Heading3,
+  Heading4,
   Minus,
-  Table as TableIcon,
-  Trash2,
-  Plus,
-  Rows,
-  Columns,
+  Smile,
 } from "lucide-react";
-import { useState } from "react";
 
+import { useState, useEffect, useCallback } from "react";
+import { EMOJI_LIST } from "@/lib/emoji-list";
+
+// ============================================
+// PROPS INTERFACE
+// ============================================
 interface WysiwygEditorProps {
   content: string;
-  onChange: (content: string) => void;
+  onChange: (html: string) => void;
   placeholder?: string;
-  className?: string;
+  minHeight?: string;
 }
 
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function WysiwygEditor({
   content,
   onChange,
-  placeholder = "Scrivi qui il contenuto...",
-  className,
+  placeholder = "Inizia a scrivere...",
+  minHeight = "300px",
 }: WysiwygEditorProps) {
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkOpen, setLinkOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageOpen, setImageOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
+  // Initialize editor
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -80,11 +80,10 @@ export default function WysiwygEditor({
           levels: [2, 3, 4],
         },
       }),
-      Underline,
-      Emoji.configure({
-        emojis: gitHubEmojis,
-        enableEmoticons: true,
+      Placeholder.configure({
+        placeholder,
       }),
+      CharacterCount,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -93,53 +92,47 @@ export default function WysiwygEditor({
       }),
       Image.configure({
         HTMLAttributes: {
-          class: "rounded-lg max-w-full h-auto my-4",
+          class: "max-w-full h-auto rounded-lg",
         },
       }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Placeholder.configure({
-        placeholder,
-      }),
-      Table.configure({
-        resizable: true,
-        HTMLAttributes: {
-          class: "border-collapse w-full my-4",
-        },
-      }),
-      TableRow,
-      TableHeader.configure({
-        HTMLAttributes: {
-          class: "bg-muted font-semibold",
-        },
-      }),
-      TableCell.configure({
-        HTMLAttributes: {
-          class: "border border-border px-4 py-2",
-        },
+      Underline,
+      // Emoji extension - solo conversione emoticon
+      // :) → 😊, :D → 😀, <3 → ❤️, ecc.
+      Emoji.configure({
+        emojis: gitHubEmojis,
+        enableEmoticons: true,
       }),
     ],
     content,
+    editorProps: {
+      attributes: {
+        class: cn(
+          "prose prose-sm sm:prose-base max-w-none",
+          "focus:outline-none",
+          "px-4 py-3"
+        ),
+        style: `min-height: ${minHeight}`,
+      },
+    },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    editorProps: {
-      attributes: {
-        class:
-          "prose prose-sm sm:prose-base max-w-none focus:outline-none min-h-[400px] px-4 py-3",
-      },
-    },
+    // Fix per React 19 / Next.js
+    immediatelyRender: false,
   });
 
-  // Sincronizza il contenuto esterno
+  // Sync content from parent
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content);
     }
   }, [content, editor]);
 
-  const addLink = useCallback(() => {
+  // Link handlers
+  const handleSetLink = useCallback(() => {
     if (!editor || !linkUrl) return;
 
     if (linkUrl === "") {
@@ -153,324 +146,222 @@ export default function WysiwygEditor({
         .run();
     }
     setLinkUrl("");
+    setLinkOpen(false);
   }, [editor, linkUrl]);
 
-  const addImage = useCallback(() => {
+  const handleUnsetLink = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().unsetLink().run();
+  }, [editor]);
+
+  // Image handler
+  const handleAddImage = useCallback(() => {
     if (!editor || !imageUrl) return;
     editor.chain().focus().setImage({ src: imageUrl }).run();
     setImageUrl("");
+    setImageOpen(false);
   }, [editor, imageUrl]);
 
-  const insertTable = useCallback(() => {
-    if (!editor) return;
-    editor
-      .chain()
-      .focus()
-      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-      .run();
-  }, [editor]);
+  // Emoji handler
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      if (!editor) return;
+      editor.chain().focus().insertContent(emoji).run();
+      setEmojiOpen(false);
+    },
+    [editor]
+  );
 
   if (!editor) {
     return (
-      <div className="border rounded-lg p-4 min-h-[500px] bg-muted/20 animate-pulse" />
+      <div
+        className="border rounded-lg bg-muted/20 animate-pulse"
+        style={{ minHeight }}
+      />
     );
   }
 
   return (
-    <div
-      className={cn("border rounded-lg overflow-hidden bg-white", className)}
-    >
-      {/* Toolbar */}
-      <div className="border-b bg-muted/30 p-2 flex flex-wrap items-center gap-1">
+    <div className="border rounded-lg overflow-hidden bg-background">
+      {/* ============================================ */}
+      {/* TOOLBAR */}
+      {/* ============================================ */}
+      <div className="border-b bg-muted/30 p-1 flex flex-wrap gap-0.5">
         {/* Undo/Redo */}
-        <div className="flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            title="Annulla (Ctrl+Z)"
-          >
-            <Undo className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            title="Ripeti (Ctrl+Y)"
-          >
-            <Redo className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        {/* Heading selector */}
-        <Select
-          value={
-            editor.isActive("heading", { level: 2 })
-              ? "h2"
-              : editor.isActive("heading", { level: 3 })
-                ? "h3"
-                : editor.isActive("heading", { level: 4 })
-                  ? "h4"
-                  : "p"
-          }
-          onValueChange={(value) => {
-            if (value === "p") {
-              editor.chain().focus().setParagraph().run();
-            } else {
-              const level = parseInt(value.replace("h", "")) as 2 | 3 | 4;
-              editor.chain().focus().toggleHeading({ level }).run();
-            }
-          }}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          title="Annulla"
         >
-          <SelectTrigger className="w-[130px] h-8">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="p">Paragrafo</SelectItem>
-            <SelectItem value="h2">Titolo 2</SelectItem>
-            <SelectItem value="h3">Titolo 3</SelectItem>
-            <SelectItem value="h4">Titolo 4</SelectItem>
-          </SelectContent>
-        </Select>
+          <Undo className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          title="Ripeti"
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* Headings */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={cn(editor.isActive("heading", { level: 2 }) && "bg-muted")}
+          title="Titolo H2"
+        >
+          <Heading2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={cn(editor.isActive("heading", { level: 3 }) && "bg-muted")}
+          title="Titolo H3"
+        >
+          <Heading3 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 4 }).run()
+          }
+          className={cn(editor.isActive("heading", { level: 4 }) && "bg-muted")}
+          title="Titolo H4"
+        >
+          <Heading4 className="h-4 w-4" />
+        </Button>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
 
         {/* Text formatting */}
-        <div className="flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant={editor.isActive("bold") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            title="Grassetto (Ctrl+B)"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("italic") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            title="Corsivo (Ctrl+I)"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("underline") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            title="Sottolineato (Ctrl+U)"
-          >
-            <UnderlineIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("strike") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            title="Barrato"
-          >
-            <Strikethrough className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("code") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            title="Codice inline"
-          >
-            <Code className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={cn(editor.isActive("bold") && "bg-muted")}
+          title="Grassetto"
+        >
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={cn(editor.isActive("italic") && "bg-muted")}
+          title="Corsivo"
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={cn(editor.isActive("underline") && "bg-muted")}
+          title="Sottolineato"
+        >
+          <UnderlineIcon className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={cn(editor.isActive("strike") && "bg-muted")}
+          title="Barrato"
+        >
+          <Strikethrough className="h-4 w-4" />
+        </Button>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="mx-1 h-6" />
 
-        {/* Alignment */}
-        <div className="flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant={
-              editor.isActive({ textAlign: "left" }) ? "secondary" : "ghost"
-            }
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            title="Allinea a sinistra"
-          >
-            <AlignLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={
-              editor.isActive({ textAlign: "center" }) ? "secondary" : "ghost"
-            }
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            title="Centra"
-          >
-            <AlignCenter className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={
-              editor.isActive({ textAlign: "right" }) ? "secondary" : "ghost"
-            }
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            title="Allinea a destra"
-          >
-            <AlignRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Text align */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          className={cn(editor.isActive({ textAlign: "left" }) && "bg-muted")}
+          title="Allinea a sinistra"
+        >
+          <AlignLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          className={cn(editor.isActive({ textAlign: "center" }) && "bg-muted")}
+          title="Allinea al centro"
+        >
+          <AlignCenter className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          className={cn(editor.isActive({ textAlign: "right" }) && "bg-muted")}
+          title="Allinea a destra"
+        >
+          <AlignRight className="h-4 w-4" />
+        </Button>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="mx-1 h-6" />
 
         {/* Lists */}
-        <div className="flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant={editor.isActive("bulletList") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            title="Lista puntata"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("orderedList") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            title="Lista numerata"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={editor.isActive("blockquote") ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            title="Citazione"
-          >
-            <Quote className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={cn(editor.isActive("bulletList") && "bg-muted")}
+          title="Elenco puntato"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={cn(editor.isActive("orderedList") && "bg-muted")}
+          title="Elenco numerato"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        {/* Emoji Popover */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" size="sm">
-              <span className="h-4 w-4">😊</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40 p-2">
-            <div className="grid grid-cols-4 gap-1">
-              {["😊", "😂", "👍", "🔥", "❤️", "✅", "🚀", "✨"].map((emoji) => (
-                <Button
-                  key={emoji}
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={() =>
-                    editor.chain().focus().insertContent(emoji).run()
-                  }
-                >
-                  {emoji}
-                </Button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Link */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant={editor.isActive("link") ? "secondary" : "ghost"}
-              size="sm"
-              title="Inserisci link"
-            >
-              <LinkIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-3">
-              <Label>URL del link</Label>
-              <Input
-                placeholder="https://esempio.com"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addLink();
-                  }
-                }}
-              />
-              <div className="flex gap-2">
-                <Button type="button" size="sm" onClick={addLink}>
-                  Inserisci
-                </Button>
-                {editor.isActive("link") && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => editor.chain().focus().unsetLink().run()}
-                  >
-                    <Unlink className="h-4 w-4 mr-1" />
-                    Rimuovi
-                  </Button>
-                )}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Image */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              title="Inserisci immagine"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-3">
-              <Label>URL dell'immagine</Label>
-              <Input
-                placeholder="/images/esempio.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addImage();
-                  }
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                Usa un percorso relativo (es: /images/gazzettino/foto.jpg) o un
-                URL completo
-              </p>
-              <Button type="button" size="sm" onClick={addImage}>
-                Inserisci immagine
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        {/* Blockquote */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={cn(editor.isActive("blockquote") && "bg-muted")}
+          title="Citazione"
+        >
+          <Quote className="h-4 w-4" />
+        </Button>
 
         {/* Horizontal rule */}
         <Button
@@ -483,127 +374,172 @@ export default function WysiwygEditor({
           <Minus className="h-4 w-4" />
         </Button>
 
-        {/* Table */}
-        <Popover>
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* Link */}
+        <Popover open={linkOpen} onOpenChange={setLinkOpen}>
           <PopoverTrigger asChild>
             <Button
               type="button"
-              variant={editor.isActive("table") ? "secondary" : "ghost"}
+              variant="ghost"
               size="sm"
-              title="Tabella"
+              className={cn(editor.isActive("link") && "bg-muted")}
+              title="Inserisci link"
             >
-              <TableIcon className="h-4 w-4" />
+              <LinkIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64">
+          <PopoverContent className="w-80" align="start">
             <div className="space-y-3">
-              <Label>Gestione tabella</Label>
-              {!editor.isActive("table") ? (
+              <Label htmlFor="link-url">URL del link</Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder="https://esempio.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSetLink();
+                  }
+                }}
+              />
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   size="sm"
-                  onClick={insertTable}
-                  className="w-full"
+                  onClick={handleSetLink}
+                  disabled={!linkUrl}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Inserisci tabella 3×3
+                  Applica
                 </Button>
-              ) : (
-                <div className="space-y-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => editor.chain().focus().addRowAfter().run()}
-                  >
-                    <Rows className="h-4 w-4 mr-2" />
-                    Aggiungi riga
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() =>
-                      editor.chain().focus().addColumnAfter().run()
-                    }
-                  >
-                    <Columns className="h-4 w-4 mr-2" />
-                    Aggiungi colonna
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => editor.chain().focus().deleteTable().run()}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Elimina tabella
-                  </Button>
-                </div>
-              )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLinkOpen(false)}
+                >
+                  Annulla
+                </Button>
+              </div>
             </div>
+          </PopoverContent>
+        </Popover>
+
+        {editor.isActive("link") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleUnsetLink}
+            title="Rimuovi link"
+          >
+            <Unlink className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Image */}
+        <Popover open={imageOpen} onOpenChange={setImageOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              title="Inserisci immagine"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="start">
+            <div className="space-y-3">
+              <Label htmlFor="image-url">URL dell'immagine</Label>
+              <Input
+                id="image-url"
+                type="url"
+                placeholder="https://esempio.com/immagine.jpg"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddImage();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Usa il percorso /images/... per immagini già nel sito
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleAddImage}
+                  disabled={!imageUrl}
+                >
+                  Inserisci
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setImageOpen(false)}
+                >
+                  Annulla
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* Emoji Picker */}
+        <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              title="Inserisci emoji"
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-2" align="start">
+            <div className="grid grid-cols-10 gap-0.5">
+              {EMOJI_LIST.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => insertEmoji(emoji)}
+                  className="p-1.5 hover:bg-muted rounded text-lg transition-colors"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Tip: scrivi :) per 😊 o &lt;3 per ❤️
+            </p>
           </PopoverContent>
         </Popover>
       </div>
 
-      {/* Bubble Menu (appare quando selezioni testo) */}
-      <BubbleMenu
-        editor={editor}
-        updateDelay={100}
-        className="bg-white shadow-lg border rounded-lg p-1 flex items-center gap-0.5"
-      >
-        <Button
-          type="button"
-          variant={editor.isActive("bold") ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-        >
-          <Bold className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant={editor.isActive("italic") ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-        >
-          <Italic className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant={editor.isActive("underline") ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-        >
-          <UnderlineIcon className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        <Button
-          type="button"
-          variant={editor.isActive("link") ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => {
-            const url = window.prompt("URL del link:");
-            if (url) {
-              editor.chain().focus().setLink({ href: url }).run();
-            }
-          }}
-        >
-          <LinkIcon className="h-4 w-4" />
-        </Button>
-      </BubbleMenu>
+      {/* ============================================ */}
+      {/* EDITOR CONTENT */}
+      {/* ============================================ */}
+      <EditorContent editor={editor} />
 
-      {/* Editor content */}
-      <EditorContent editor={editor} className="min-h-[400px]" />
-
-      {/* Footer con conteggio caratteri */}
-      <div className="border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground flex justify-between">
+      {/* ============================================ */}
+      {/* FOOTER */}
+      {/* ============================================ */}
+      <div className="border-t bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground flex justify-between">
         <span>
-          {editor.storage.characterCount?.characters?.() ?? 0} caratteri
+          {editor.storage.characterCount?.characters() ?? 0} caratteri •{" "}
+          {editor.storage.characterCount?.words() ?? 0} parole
         </span>
-        <span>Suggerimento: Usa Ctrl+B per grassetto, Ctrl+I per corsivo</span>
+        <span>Tiptap Editor</span>
       </div>
     </div>
   );
