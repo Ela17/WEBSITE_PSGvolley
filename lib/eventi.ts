@@ -101,7 +101,7 @@ export async function getAllEventiPassati(): Promise<EventoPreview[]> {
     .map(dbToPreview);
 }
 
-// Ottiene un singolo evento con contenuto completo
+// Ottiene un singolo evento con contenuto completo (HTML diretto)
 export async function getEventoBySlug(
   slug: string,
   type?: "futuro" | "passato"
@@ -113,7 +113,6 @@ export async function getEventoBySlug(
   }
 
   const today = getTodayString();
-
   let query = supabase.from("eventi").select("*").eq("slug", slug);
 
   // Se specificato il tipo, filtra per data
@@ -126,7 +125,6 @@ export async function getEventoBySlug(
   const { data, error } = await query.single();
 
   if (error || !data) {
-    // Se non trovato con il tipo specificato, prova senza filtro
     if (type) {
       return getEventoBySlug(slug);
     }
@@ -134,16 +132,7 @@ export async function getEventoBySlug(
     return null;
   }
 
-  // Converti markdown in HTML
-  const processedContent = await remark()
-    .use(remarkGfm)
-    .use(html)
-    .process(data.content);
-
-  const evento = dbToEvento(data, true);
-  evento.content = processedContent.toString();
-
-  return evento;
+  return dbToEvento(data, true);
 }
 
 // Ottiene tutti gli eventi (futuri + passati)

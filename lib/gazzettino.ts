@@ -82,7 +82,7 @@ export async function getAllGazzettinoPostsPreview(): Promise<GazzettinoPostPrev
   return (data || []).map(dbToPreview);
 }
 
-// Ottiene un singolo post con contenuto completo (già HTML)
+// Ottiene un singolo post con contenuto completo (HTML diretto dal DB)
 export async function getGazzettinoPostBySlug(slug: string): Promise<GazzettinoPost | null> {
   const { data, error } = await supabase
     .from('gazzettino_articles')
@@ -95,16 +95,7 @@ export async function getGazzettinoPostBySlug(slug: string): Promise<GazzettinoP
     return null;
   }
 
-  // Converti markdown in HTML
-  const processedContent = await remark()
-    .use(gfm)
-    .use(html)
-    .process(data.content);
-  
-  const post = dbToPost(data);
-  post.content = processedContent.toString();
-  
-  return post;
+  return dbToPost(data);
 }
 
 // Ottiene l'ultimo post pubblicato
