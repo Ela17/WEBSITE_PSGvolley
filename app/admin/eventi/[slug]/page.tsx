@@ -3,9 +3,9 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,7 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Calendar, Eye, EyeOff } from "lucide-react";
+
+// Import dinamico per evitare SSR issues con Tiptap
+const WysiwygEditor = dynamic(() => import("@/components/WysiwygEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="border rounded-lg p-4 min-h-[300px] bg-muted/20 animate-pulse flex items-center justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 export default function ModificaEventoPage({
   params,
@@ -27,6 +37,7 @@ export default function ModificaEventoPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -136,26 +147,46 @@ export default function ModificaEventoPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/eventi">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Indietro
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-green-600" />
-              <h1 className="text-2xl font-bold">Modifica Evento</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/eventi">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Indietro
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-6 h-6 text-green-600" />
+                <h1 className="text-2xl font-bold">Modifica Evento</h1>
+              </div>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  Nascondi anteprima
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Mostra anteprima
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Form */}
       <div className="container mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
+        <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800">{error}</p>
@@ -334,40 +365,61 @@ export default function ModificaEventoPage({
             </CardContent>
           </Card>
 
-          {/* Contenuto */}
+          {/* Descrizione breve */}
           <Card>
             <CardHeader>
-              <CardTitle>Contenuto</CardTitle>
+              <CardTitle>Descrizione Breve</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div>
-                <Label htmlFor="description">Descrizione breve</Label>
-                <Textarea
+                <Label htmlFor="description">
+                  Descrizione (mostrata nelle card)
+                </Label>
+                <Input
                   id="description"
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
                   placeholder="Breve descrizione dell'evento..."
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="content">Contenuto completo (Markdown)</Label>
-                <Textarea
-                  id="content"
-                  value={form.content}
-                  onChange={(e) =>
-                    setForm({ ...form, content: e.target.value })
-                  }
-                  placeholder="## Programma&#10;&#10;- 9:00 Ritrovo&#10;- 10:00 Inizio partite&#10;..."
-                  rows={15}
-                  className="font-mono text-sm"
                 />
               </div>
             </CardContent>
           </Card>
+
+          {/* Contenuto con Editor WYSIWYG */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contenuto Completo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <WysiwygEditor
+                  content={form.content}
+                  onChange={(content) => setForm({ ...form, content })}
+                  placeholder="Scrivi qui il programma, le regole, i dettagli dell'evento..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anteprima contenuto */}
+          {showPreview && form.content && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Anteprima Contenuto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  className="prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: form.content }}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Media e Tags */}
           <Card>
@@ -421,7 +473,7 @@ export default function ModificaEventoPage({
           </Card>
 
           {/* Azioni */}
-          <div className="flex items-center justify-end gap-4">
+          <div className="flex items-center justify-end gap-4 sticky bottom-4 bg-white/80 backdrop-blur-sm p-4 rounded-lg border shadow-lg">
             <Link href="/admin/eventi">
               <Button variant="outline" type="button">
                 Annulla

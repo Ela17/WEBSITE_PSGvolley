@@ -3,17 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, Save, Loader2, FileText, Eye, EyeOff } from "lucide-react";
+
+// Import dinamico per evitare SSR issues con Tiptap
+const WysiwygEditor = dynamic(() => import("@/components/WysiwygEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="border rounded-lg p-4 min-h-[400px] bg-muted/20 animate-pulse flex items-center justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 export default function NuovoArticoloPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -89,26 +100,46 @@ export default function NuovoArticoloPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/gazzettino">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Indietro
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <FileText className="w-6 h-6 text-blue-600" />
-              <h1 className="text-2xl font-bold">Nuovo Articolo</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/gazzettino">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Indietro
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2">
+                <FileText className="w-6 h-6 text-blue-600" />
+                <h1 className="text-2xl font-bold">Nuovo Articolo</h1>
+              </div>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  Nascondi anteprima
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Mostra anteprima
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Form */}
       <div className="container mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
+        <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800">{error}</p>
@@ -210,44 +241,61 @@ export default function NuovoArticoloPage() {
             </CardContent>
           </Card>
 
-          {/* Contenuto */}
+          {/* Anteprima/Excerpt */}
           <Card>
             <CardHeader>
-              <CardTitle>Contenuto</CardTitle>
+              <CardTitle>Anteprima</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div>
-                <Label htmlFor="excerpt">Anteprima / Riassunto</Label>
-                <Textarea
+                <Label htmlFor="excerpt">
+                  Riassunto (mostrato nella lista articoli)
+                </Label>
+                <Input
                   id="excerpt"
                   value={form.excerpt}
                   onChange={(e) =>
                     setForm({ ...form, excerpt: e.target.value })
                   }
                   placeholder="Breve descrizione dell'articolo..."
-                  rows={3}
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="content">Contenuto (Markdown)</Label>
-                <Textarea
-                  id="content"
-                  value={form.content}
-                  onChange={(e) =>
-                    setForm({ ...form, content: e.target.value })
-                  }
-                  placeholder="## Titolo sezione&#10;&#10;Testo dell'articolo...&#10;&#10;### Sottosezione&#10;&#10;Altro testo..."
-                  rows={20}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Supporta Markdown: ## titoli, **grassetto**, *corsivo*, -
-                  liste
-                </p>
               </div>
             </CardContent>
           </Card>
+
+          {/* Contenuto con Editor WYSIWYG */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contenuto Articolo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <WysiwygEditor
+                  content={form.content}
+                  onChange={(content) => setForm({ ...form, content })}
+                  placeholder="Scrivi qui il contenuto dell'articolo..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anteprima contenuto */}
+          {showPreview && form.content && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Anteprima Contenuto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  className="prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: form.content }}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Media e Tags */}
           <Card>
@@ -283,7 +331,7 @@ export default function NuovoArticoloPage() {
           </Card>
 
           {/* Azioni */}
-          <div className="flex items-center justify-end gap-4">
+          <div className="flex items-center justify-end gap-4 sticky bottom-4 bg-white/80 backdrop-blur-sm p-4 rounded-lg border shadow-lg">
             <Link href="/admin/gazzettino">
               <Button variant="outline" type="button">
                 Annulla
