@@ -38,7 +38,7 @@ export interface DBEvento {
   tags: string[];
   content: string;
   locandina: string | null;
-  // is_past rimosso - ora si usa la data per determinare se è passato
+  google_drive_link: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
-import WysiwygEditor from "@/components/WysiwygEditor";
 
 export default function NuovoEventoPage() {
   const router = useRouter();
@@ -38,6 +37,7 @@ export default function NuovoEventoPage() {
     fee: "",
     locandina: "",
     imagesFolder: "",
+    googleDriveLink: "",
     tags: "",
     content: "",
   });
@@ -81,6 +81,7 @@ export default function NuovoEventoPage() {
                 .filter(Boolean)
             : [],
           registrationDeadline: form.registrationDeadline || null,
+          googleDriveLink: form.googleDriveLink || null,
         }),
       });
 
@@ -318,12 +319,16 @@ export default function NuovoEventoPage() {
               </div>
 
               <div>
-                <Label>Contenuto completo</Label>
-                <WysiwygEditor
-                  content={form.content}
-                  onChange={(html) => setForm({ ...form, content: html })}
-                  placeholder="Scrivi il programma, i dettagli dell'evento..."
-                  minHeight="350px"
+                <Label htmlFor="content">Contenuto completo (HTML)</Label>
+                <Textarea
+                  id="content"
+                  value={form.content}
+                  onChange={(e) =>
+                    setForm({ ...form, content: e.target.value })
+                  }
+                  placeholder="<h2>Programma</h2><ul><li>9:00 Ritrovo</li><li>10:00 Inizio partite</li></ul>"
+                  rows={15}
+                  className="font-mono text-sm"
                 />
               </div>
             </CardContent>
@@ -367,7 +372,24 @@ export default function NuovoEventoPage() {
                   </p>
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
+                  <Label htmlFor="googleDriveLink">
+                    Link Google Drive (galleria foto)
+                  </Label>
+                  <Input
+                    id="googleDriveLink"
+                    value={form.googleDriveLink}
+                    onChange={(e) =>
+                      setForm({ ...form, googleDriveLink: e.target.value })
+                    }
+                    placeholder="https://drive.google.com/drive/folders/..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Opzionale - mostrato solo per eventi passati con immagini
+                  </p>
+                </div>
+
+                <div>
                   <Label htmlFor="tags">Tags (separati da virgola)</Label>
                   <Input
                     id="tags"

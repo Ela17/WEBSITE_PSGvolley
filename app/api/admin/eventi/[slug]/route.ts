@@ -80,6 +80,7 @@ export async function PUT(
         tags: body.tags || [],
         content: body.content || "",
         locandina: body.locandina || null,
+        google_drive_link: body.googleDriveLink || null,
         updated_at: new Date().toISOString(),
       })
       .eq("slug", slug)

@@ -1,7 +1,4 @@
 import { supabase, DBEvento } from "./supabase";
-import { remark } from "remark";
-import html from "remark-html";
-import remarkGfm from "remark-gfm";
 
 // Interfacce compatibili con il codice esistente
 export interface Evento {
@@ -23,6 +20,7 @@ export interface Evento {
   tags?: string[];
   content: string;
   locandina?: string | null;
+  googleDriveLink?: string;
 }
 
 export interface EventoPreview extends Omit<Evento, "content"> {}
@@ -61,6 +59,17 @@ function getTodayString(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+/**
+ * Controlla se una data è passata (utility sincrona)
+ * @param dateStr - Data in formato YYYY-MM-DD o ISO
+ * @returns true se la data è precedente a oggi
+ */
+export function isEventoPast(dateStr: string): boolean {
+  const today = getTodayString();
+  const eventDate = dateStr.split("T")[0]; // Normalizza a YYYY-MM-DD
+  return eventDate < today;
+}
+
 // Legge tutti gli eventi futuri (data >= oggi)
 export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
   const today = getTodayString();
@@ -69,7 +78,7 @@ export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
     .from("eventi")
     .select("*")
     .gte("date", today)
-    .order("date", { ascending: true }); // Futuri ordinati per data crescente
+    .order("date", { ascending: true });
 
   if (error) {
     console.error("Errore getAllEventiFuturi:", error);
@@ -89,7 +98,7 @@ export async function getAllEventiPassati(): Promise<EventoPreview[]> {
     .from("eventi")
     .select("*")
     .lt("date", today)
-    .order("date", { ascending: false }); // Passati ordinati per data decrescente
+    .order("date", { ascending: false });
 
   if (error) {
     console.error("Errore getAllEventiPassati:", error);
@@ -101,37 +110,26 @@ export async function getAllEventiPassati(): Promise<EventoPreview[]> {
     .map(dbToPreview);
 }
 
-// Ottiene un singolo evento con contenuto completo (HTML diretto)
-export async function getEventoBySlug(
-  slug: string,
-  type?: "futuro" | "passato"
-): Promise<Evento | null> {
+// Ottiene un singolo evento con contenuto completo
+export async function getEventoBySlug(slug: string): Promise<Evento | null> {
   // Controllo che lo slug sia valido
   if (!slug || slug === "undefined" || slug === "null") {
     console.error("Invalid slug provided:", slug);
     return null;
   }
 
-  const today = getTodayString();
-  let query = supabase.from("eventi").select("*").eq("slug", slug);
-
-  // Se specificato il tipo, filtra per data
-  if (type === "futuro") {
-    query = query.gte("date", today);
-  } else if (type === "passato") {
-    query = query.lt("date", today);
-  }
-
-  const { data, error } = await query.single();
+  const { data, error } = await supabase
+    .from("eventi")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
   if (error || !data) {
-    if (type) {
-      return getEventoBySlug(slug);
-    }
     console.error("Errore getEventoBySlug:", error);
     return null;
   }
 
+  // Il contenuto è già in HTML nel database
   return dbToEvento(data, true);
 }
 
@@ -150,19 +148,4 @@ export async function getAllEventi(): Promise<EventoPreview[]> {
   return (data || [])
     .filter((e) => e.slug && e.slug !== "undefined" && e.slug !== "null")
     .map(dbToPreview);
-}
-
-// Controlla se un evento è passato (utility basata sulla data)
-export async function isEventoPast(slug: string): Promise<boolean> {
-  const today = getTodayString();
-
-  const { data } = await supabase
-    .from("eventi")
-    .select("date")
-    .eq("slug", slug)
-    .single();
-
-  if (!data?.date) return false;
-
-  return data.date < today;
 }

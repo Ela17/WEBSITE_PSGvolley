@@ -1,10 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import fs from "fs";
+import path from "path";
 import {
   getEventoBySlug,
   getAllEventiPassati,
   getAllEventiFuturi,
+  isEventoPast,
 } from "@/lib/eventi";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -47,6 +50,47 @@ const typeLabelMap = {
   altro: "Altro",
 };
 
+/**
+ * Legge le immagini da una cartella in public/images/
+ * Esclude la cover image e ritorna array di path
+ */
+function getImagesFromFolder(
+  imagesFolder: string | undefined,
+  coverImage: string | undefined
+): string[] {
+  if (!imagesFolder) return [];
+
+  try {
+    const folderPath = path.join(process.cwd(), "public/images", imagesFolder);
+
+    if (!fs.existsSync(folderPath)) {
+      console.warn(`Cartella immagini non trovata: ${folderPath}`);
+      return [];
+    }
+
+    const files = fs.readdirSync(folderPath);
+
+    // Filtra solo immagini e escludi la cover
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const coverFileName = coverImage ? path.basename(coverImage) : "";
+
+    const images = files
+      .filter((file) => {
+        const ext = path.extname(file).toLowerCase();
+        const isImage = imageExtensions.includes(ext);
+        const isCover = file === coverFileName;
+        return isImage && !isCover;
+      })
+      .map((file) => `/images/${imagesFolder}/${file}`)
+      .sort(); // Ordina alfabeticamente
+
+    return images;
+  } catch (error) {
+    console.error(`Errore lettura cartella ${imagesFolder}:`, error);
+    return [];
+  }
+}
+
 // Genera i parametri statici per tutti gli eventi
 export async function generateStaticParams() {
   const [eventiFuturi, eventiPassati] = await Promise.all([
@@ -62,15 +106,6 @@ export async function generateStaticParams() {
   return allSlugs;
 }
 
-// Helper per determinare se un evento è passato basandosi sulla data
-function isEventoPassato(eventDate: string): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const date = new Date(eventDate);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
-}
-
 export default async function EventoDetailPage({
   params,
 }: {
@@ -78,7 +113,7 @@ export default async function EventoDetailPage({
 }) {
   const { slug } = await params;
 
-  // Cerca l'evento (senza specificare tipo - lo determiniamo dalla data)
+  // Recupera l'evento dal database
   const evento = await getEventoBySlug(slug);
 
   // Se non trovato, 404
@@ -86,8 +121,14 @@ export default async function EventoDetailPage({
     notFound();
   }
 
-  // Determina se è passato basandosi sulla data
-  const isPassato = isEventoPassato(evento.date);
+  // Calcola se l'evento è passato in base alla data
+  const isPassato = isEventoPast(evento.date);
+
+  // Legge le immagini dalla cartella (escludendo la cover)
+  const eventImages = getImagesFromFolder(
+    evento.imagesFolder,
+    evento.coverImage
+  );
 
   const Icon = iconMap[evento.type];
   const badgeColor = badgeColorMap[evento.type];
@@ -265,7 +306,7 @@ export default async function EventoDetailPage({
                       className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 underline font-semibold"
                     >
                       <Eye className="w-5 h-5" />
-                      <span> Visualizza la locandina dell'evento!</span>
+                      <span>Visualizza la locandina dell'evento!</span>
                     </a>
                   </div>
                 )}
@@ -274,32 +315,31 @@ export default async function EventoDetailPage({
           )}
 
           {/* Carosello immagini per eventi passati - PRIMA del contenuto */}
-          {isPassato && evento.images && evento.images.length > 0 && (
+          {isPassato && eventImages.length > 0 && (
             <>
               <div className="mb-6">
-                <ImageCarousel
-                  images={evento.images}
-                  eventTitle={evento.title}
-                />
+                <ImageCarousel images={eventImages} eventTitle={evento.title} />
               </div>
 
-              {/* Link Google Drive subito dopo il carosello */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-r-lg">
-                <p className="text-gray-700">
-                  <ImagePlus className="w-5 h-5 inline-block mr-2 text-blue-500" />
-                  <strong>
-                    Tutte le foto del torneo sono disponibili nella{" "}
-                    <a
-                      href="https://drive.google.com/drive/folders/19-j0bzuq7WtAcpBzOsle2e_w9vp1unUr?usp=drive_link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                    >
-                      Galleria su Google Drive
-                    </a>
-                  </strong>
-                </p>
-              </div>
+              {/* Link Google Drive - solo se presente */}
+              {evento.googleDriveLink && (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-r-lg">
+                  <p className="text-gray-700">
+                    <ImagePlus className="w-5 h-5 inline-block mr-2 text-blue-500" />
+                    <strong>
+                      Tutte le foto dell'evento sono disponibili nella{" "}
+                      <a
+                        href={evento.googleDriveLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                      >
+                        Galleria su Google Drive
+                      </a>
+                    </strong>
+                  </p>
+                </div>
+              )}
             </>
           )}
 

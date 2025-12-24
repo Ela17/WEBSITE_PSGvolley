@@ -120,11 +120,15 @@
   }
 }
 
-/* Stili per il contenuto markdown */
+/* ============================================
+   STILI PROSE - Contenuto Markdown/WYSIWYG
+   ============================================ */
+
 .prose {
   @apply text-foreground max-w-none;
 }
 
+/* Titoli */
 .prose h1 {
   @apply text-4xl font-bold mt-8 mb-4;
 }
@@ -141,6 +145,7 @@
   @apply text-xl font-semibold mt-4 mb-2;
 }
 
+/* Paragrafi e testo */
 .prose p {
   @apply mb-4 leading-7;
 }
@@ -153,22 +158,37 @@
   @apply italic;
 }
 
+/* Liste */
 .prose ul {
-  @apply list-disc list-inside mb-4 space-y-2;
+  @apply list-disc pl-6 mb-4 space-y-1;
 }
 
 .prose ol {
-  @apply list-decimal list-inside mb-4 space-y-2;
+  @apply list-decimal pl-6 mb-4 space-y-1;
 }
 
 .prose li {
   @apply leading-7;
 }
 
+/* 
+ * Fix per editor WYSIWYG che wrappano il contenuto in <p>
+ * Es: <li><p>Testo</p></li> invece di <li>Testo</li>
+ */
+.prose li > p {
+  @apply inline m-0;
+}
+
+.prose li > p:first-child {
+  @apply inline;
+}
+
+/* Link */
 .prose a {
   @apply text-primary hover:underline;
 }
 
+/* Elementi speciali */
 .prose hr {
   @apply my-8 border-t border-border;
 }
@@ -189,28 +209,60 @@
   @apply bg-transparent p-0;
 }
 
-/* Stili per le tabelle */
+/* ============================================
+   TABELLE - Stile unificato
+   Gestisce sia tabelle con <thead> che senza
+   (alcuni editor WYSIWYG mettono <th> in <tbody>)
+   ============================================ */
+
 .prose table {
   @apply w-full border-collapse mb-6 text-sm;
 }
 
+/* Header tradizionale con <thead> */
 .prose thead {
   @apply bg-muted;
 }
 
+.prose thead tr {
+  @apply bg-muted;
+}
+
+/* 
+ * Stile per <th> OVUNQUE si trovi
+ * Funziona sia in <thead> che in <tbody> (editor WYSIWYG)
+ */
 .prose th {
-  @apply border border-border px-4 py-3 text-left font-semibold;
+  @apply border border-border px-4 py-2 text-left font-semibold bg-muted;
 }
 
+/* Celle dati */
 .prose td {
-  @apply border border-border px-4 py-3;
+  @apply border border-border px-4 py-2;
 }
 
-.prose tbody tr:hover {
+/* 
+ * Riga con <th> dentro <tbody> (output tipico editor WYSIWYG)
+ * Applica sfondo header alla prima riga se contiene <th>
+ */
+.prose tbody tr:has(th) {
+  @apply bg-muted;
+}
+
+/* Hover solo su righe con <td> (non sull'header) */
+.prose tbody tr:not(:has(th)):hover {
   @apply bg-muted/50;
 }
 
-/* Spacing tra elementi consecutivi */
+/* Righe alternate - solo su righe dati, non header */
+.prose tbody tr:not(:has(th)):nth-child(even) {
+  @apply bg-muted/20;
+}
+
+/* ============================================
+   SPACING
+   ============================================ */
+
 .prose > * + * {
   @apply mt-0;
 }
@@ -221,241 +273,4 @@
 
 .prose h3 + h4 {
   @apply mt-3;
-}
-
-/* Stili per l'editor WYSIWYG Tiptap */
-
-/* Placeholder */
-.tiptap p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  color: #9ca3af;
-  pointer-events: none;
-  height: 0;
-}
-
-/* Focus style */
-.tiptap:focus {
-  outline: none;
-}
-
-/* Prose overrides per l'editor */
-.tiptap {
-  /* Headings */
-  h2 {
-    font-size: 1.875rem;
-    font-weight: 700;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-    line-height: 1.25;
-  }
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.3;
-  }
-
-  h4 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-  }
-
-  /* Paragraphs */
-  p {
-    margin-bottom: 0.75rem;
-    line-height: 1.7;
-  }
-
-  /* Lists */
-  ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  ol {
-    list-style-type: decimal;
-    padding-left: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  li {
-    margin-bottom: 0.25rem;
-  }
-
-  li > p {
-    margin-bottom: 0.25rem;
-  }
-
-  /* Blockquote */
-  blockquote {
-    border-left: 4px solid #3b82f6;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    font-style: italic;
-    color: #4b5563;
-  }
-
-  /* Code */
-  code {
-    background-color: #f3f4f6;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    font-family: ui-monospace, monospace;
-  }
-
-  pre {
-    background-color: #1f2937;
-    color: #f9fafb;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    margin: 1rem 0;
-  }
-
-  pre code {
-    background-color: transparent;
-    padding: 0;
-    color: inherit;
-  }
-
-  /* Horizontal rule */
-  hr {
-    border: none;
-    border-top: 2px solid #e5e7eb;
-    margin: 1.5rem 0;
-  }
-
-  /* Links */
-  a {
-    color: #2563eb;
-    text-decoration: underline;
-  }
-
-  a:hover {
-    color: #1d4ed8;
-  }
-
-  /* Images */
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
-  }
-
-  /* Tables */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-  }
-
-  th {
-    background-color: #f3f4f6;
-    font-weight: 600;
-    text-align: left;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e5e7eb;
-  }
-
-  td {
-    padding: 0.75rem 1rem;
-    border: 1px solid #e5e7eb;
-  }
-
-  tr:hover td {
-    background-color: #f9fafb;
-  }
-
-  /* Selection in table */
-  .selectedCell:after {
-    z-index: 2;
-    position: absolute;
-    content: "";
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background: rgba(59, 130, 246, 0.1);
-    pointer-events: none;
-  }
-
-  /* Table resize handle */
-  .column-resize-handle {
-    position: absolute;
-    right: -2px;
-    top: 0;
-    bottom: -2px;
-    width: 4px;
-    background-color: #3b82f6;
-    pointer-events: none;
-  }
-
-  /* Table wrapper for overflow */
-  .tableWrapper {
-    overflow-x: auto;
-    margin: 1rem 0;
-  }
-
-  /* Strong */
-  strong {
-    font-weight: 700;
-  }
-
-  /* Emphasis */
-  em {
-    font-style: italic;
-  }
-
-  /* Underline */
-  u {
-    text-decoration: underline;
-  }
-
-  /* Strikethrough */
-  s {
-    text-decoration: line-through;
-  }
-}
-
-/* Dark mode support */
-.dark .tiptap {
-  blockquote {
-    color: #9ca3af;
-    border-left-color: #60a5fa;
-  }
-
-  code {
-    background-color: #374151;
-  }
-
-  hr {
-    border-top-color: #4b5563;
-  }
-
-  th {
-    background-color: #374151;
-    border-color: #4b5563;
-  }
-
-  td {
-    border-color: #4b5563;
-  }
-
-  tr:hover td {
-    background-color: #1f2937;
-  }
-}
-
-/* Animation for typing */
-.tiptap .ProseMirror-gapcursor:after {
-  border-top: 1px solid #3b82f6;
 }
