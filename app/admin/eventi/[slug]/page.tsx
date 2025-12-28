@@ -337,15 +337,17 @@ export default function ModificaEventoPage({
                 </div>
 
                 <div>
-                  <Label htmlFor="locandina">Locandina (URL)</Label>
-                  <Input
-                    id="locandina"
+                  <Label>Locandina</Label>
+                  <ImageUploader
                     value={form.locandina}
-                    onChange={(e) =>
-                      setForm({ ...form, locandina: e.target.value })
-                    }
-                    placeholder="/locandine/eventi/torneo-2025/locandina.pdf"
+                    onChange={(url) => setForm({ ...form, locandina: url })}
+                    folder={`eventi/${form.slug || slug}`}
+                    label="Carica locandina"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Immagine della locandina (verrà mostrata nella pagina
+                    evento)
+                  </p>
                 </div>
               </div>
             </CardContent>

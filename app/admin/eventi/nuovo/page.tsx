@@ -311,15 +311,17 @@ export default function NuovoEventoPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="locandina">Locandina (URL)</Label>
-                    <Input
-                      id="locandina"
+                    <Label>Locandina</Label>
+                    <ImageUploader
                       value={form.locandina}
-                      onChange={(e) =>
-                        setForm({ ...form, locandina: e.target.value })
-                      }
-                      placeholder="URL della locandina PDF o immagine"
+                      onChange={(url) => setForm({ ...form, locandina: url })}
+                      folder={`eventi/${form.slug || "temp"}`}
+                      label="Carica locandina"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Immagine della locandina (verrà mostrata nella pagina
+                      evento)
+                    </p>
                   </div>
                 </div>
               </CardContent>

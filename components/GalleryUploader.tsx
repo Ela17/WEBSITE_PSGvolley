@@ -46,21 +46,58 @@ export default function GalleryUploader({
 
   // Upload multiple files
   const uploadFiles = useCallback(
-    async (files: FileList) => {
+    async (files: FileList | File[]) => {
       setError(null);
+
+      // Verifica che ci siano file e spazio disponibile
+      if (!files || files.length === 0) {
+        return;
+      }
+
+      // Converti in array se necessario
+      const filesArray = Array.isArray(files) ? files : Array.from(files);
+
+      const availableSlots = maxImages - images.length;
+      if (availableSlots <= 0) {
+        setError(`Numero massimo di immagini raggiunto (${maxImages})`);
+        return;
+      }
+
       setIsUploading(true);
 
       const newUrls: string[] = [];
-      const totalFiles = Math.min(files.length, maxImages - images.length);
+      const errors: string[] = [];
+      const filesToUpload = Math.min(filesArray.length, availableSlots);
+      let uploadedCount = 0;
 
-      for (let i = 0; i < totalFiles; i++) {
-        const file = files[i];
+      console.log("🚀 Inizio upload di", filesToUpload, "file");
 
-        if (!file.type.startsWith("image/")) {
+      for (let i = 0; i < filesToUpload; i++) {
+        const file = filesArray[i];
+        console.log(
+          `📤 Processando file ${i + 1}/${filesToUpload}:`,
+          file?.name
+        );
+
+        // Skip se file non valido
+        if (!file) {
           continue;
         }
 
-        setUploadProgress(`Caricamento ${i + 1}/${totalFiles}...`);
+        // Verifica tipo file
+        if (!file.type || !file.type.startsWith("image/")) {
+          errors.push(`${file.name}: tipo non supportato`);
+          continue;
+        }
+
+        // Verifica dimensione (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          errors.push(`${file.name}: troppo grande (max 5MB)`);
+          continue;
+        }
+
+        uploadedCount++;
+        setUploadProgress(`Caricamento ${uploadedCount}/${filesToUpload}...`);
 
         try {
           const formData = new FormData();
@@ -75,21 +112,38 @@ export default function GalleryUploader({
           const data = await res.json();
 
           if (data.success) {
+            console.log(`✅ Upload OK:`, file.name, "->", data.url);
             newUrls.push(data.url);
           } else {
+            console.error(`❌ Upload FAIL:`, file.name, data.error);
+            errors.push(`${file.name}: ${data.error || "errore server"}`);
             console.error(`Errore upload ${file.name}:`, data.error);
           }
         } catch (err) {
+          errors.push(`${file.name}: errore di rete`);
           console.error(`Errore upload ${file.name}:`, err);
         }
       }
+
+      console.log(
+        "🏁 Upload completato. Successi:",
+        newUrls.length,
+        "Errori:",
+        errors.length
+      );
 
       if (newUrls.length > 0) {
         onChange([...images, ...newUrls]);
       }
 
-      if (newUrls.length < totalFiles) {
-        setError(`${totalFiles - newUrls.length} immagini non caricate`);
+      if (errors.length > 0) {
+        // Mostra solo i primi 3 errori per non sovraccaricare l'UI
+        const errorSummary =
+          errors.length > 3
+            ? `${errors.slice(0, 3).join(", ")} e altri ${errors.length - 3}`
+            : errors.join(", ");
+        setError(`Errori: ${errorSummary}`);
+        console.error("Errori upload:", errors);
       }
 
       setIsUploading(false);
@@ -124,7 +178,9 @@ export default function GalleryUploader({
 
       const files = e.dataTransfer.files;
       if (files && files.length > 0) {
-        uploadFiles(files);
+        // Converti subito in array per sicurezza
+        const filesArray = Array.from(files);
+        uploadFiles(filesArray);
       }
     },
     [uploadFiles]
@@ -137,8 +193,19 @@ export default function GalleryUploader({
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
+      console.log("📁 File selezionati:", files?.length);
+
       if (files && files.length > 0) {
-        uploadFiles(files);
+        // Converti FileList in Array PRIMA di resettare l'input
+        // FileList viene invalidato quando si resetta l'input
+        const filesArray = Array.from(files);
+        console.log(
+          "📁 Array creato con",
+          filesArray.length,
+          "file:",
+          filesArray.map((f) => f.name)
+        );
+        uploadFiles(filesArray);
       }
       // Reset input per permettere selezione stesso file
       e.target.value = "";

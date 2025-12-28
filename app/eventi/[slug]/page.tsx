@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ImagePlus } from "lucide-react";
+import { ImagePlus } from "lucide-react";
 
 import {
   Calendar,
@@ -25,6 +25,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ImageCarousel from "@/components/ImagesCarousel";
+import LocandinaPreview from "@/components/LocandinaPreview";
 
 // Mappa per le icone dei tipi di evento
 const iconMap = {
@@ -151,7 +152,12 @@ export default async function EventoDetailPage({
   const isPassato = isEventoPast(evento.date);
 
   // Ottiene le immagini (da DB o cartella legacy)
-  const eventImages = getEventImages(evento);
+  let eventImages = getEventImages(evento);
+
+  // Per eventi passati, aggiungi la locandina come prima immagine della gallery
+  if (isPassato && evento.locandina) {
+    eventImages = [evento.locandina, ...eventImages];
+  }
 
   const Icon = iconMap[evento.type];
   const badgeColor = badgeColorMap[evento.type];
@@ -321,17 +327,10 @@ export default async function EventoDetailPage({
                   </div>
                 )}
                 {evento.locandina && (
-                  <div className="pt-2">
-                    <a
-                      href={evento.locandina}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 underline font-semibold"
-                    >
-                      <Eye className="w-5 h-5" />
-                      <span>Visualizza la locandina dell'evento!</span>
-                    </a>
-                  </div>
+                  <LocandinaPreview
+                    src={evento.locandina}
+                    title={evento.title}
+                  />
                 )}
               </div>
             </div>
