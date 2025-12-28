@@ -5,6 +5,7 @@ import {
   FaDirections,
   FaRegCopyright,
   FaGithub,
+  FaLock,
 } from "react-icons/fa";
 
 export default function Footer() {
@@ -38,7 +39,7 @@ export default function Footer() {
             </div>
 
             {/* Instagram inline */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-2">
               <span className="font-semibold text-sm">Seguici:</span>
               <Link
                 href="https://www.instagram.com/asd_patrociniosgiuseppe/"
@@ -48,6 +49,18 @@ export default function Footer() {
               >
                 <FaInstagram className="w-5 h-5" />
                 <span className="text-sm">@asd_patrocinosgiuseppe</span>
+              </Link>
+            </div>
+
+            {/* Link Admin */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">Area riservata:</span>
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                <FaLock className="w-3.5 h-3.5" />
+                <span>Admin</span>
               </Link>
             </div>
           </div>
