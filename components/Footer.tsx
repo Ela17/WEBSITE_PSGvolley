@@ -41,7 +41,7 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm">Seguici:</span>
               <Link
-                href="https://www.instagram.com/asd_patrocinosgiuseppe"
+                href="https://www.instagram.com/asd_patrociniosgiuseppe/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"

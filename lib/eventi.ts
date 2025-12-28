@@ -11,7 +11,7 @@ export interface Evento {
   coverImage: string;
   type: "torneo" | "amichevole" | "evento-sociale" | "altro";
   category: string;
-  images?: string[];
+  images: string[];
   imagesFolder?: string;
   results?: string;
   registrationLink?: string;
@@ -46,6 +46,7 @@ function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
     tags: e.tags || [],
     content: includeContent ? e.content : "",
     locandina: e.locandina,
+    googleDriveLink: e.google_drive_link || "",
   };
 }
 

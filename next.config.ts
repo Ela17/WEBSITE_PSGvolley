@@ -11,7 +11,15 @@ if (process.env.ADMIN_PASSWORD_HASH_BASE64) {
 }
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "idulduagzuywrckdmqgy.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

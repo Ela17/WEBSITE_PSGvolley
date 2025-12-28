@@ -15,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
+import ImageUploader from "@/components/ImageUploader";
+import GalleryUploader from "@/components/GalleryUploader";
 
 export default function NuovoEventoPage() {
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function NuovoEventoPage() {
     registrationDeadline: "",
     fee: "",
     locandina: "",
-    imagesFolder: "",
+    images: [] as string[], // Array di URL per la galleria
     googleDriveLink: "",
     tags: "",
     content: "",
@@ -63,6 +65,15 @@ export default function NuovoEventoPage() {
     });
   };
 
+  // Controlla se l'evento è nel passato
+  const isEventPast = () => {
+    if (!form.date) return false;
+    const eventDate = new Date(form.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return eventDate < today;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -82,6 +93,7 @@ export default function NuovoEventoPage() {
             : [],
           registrationDeadline: form.registrationDeadline || null,
           googleDriveLink: form.googleDriveLink || null,
+          // Nota: images è già un array
         }),
       });
 
@@ -99,6 +111,8 @@ export default function NuovoEventoPage() {
       setSaving(false);
     }
   };
+
+  const isPast = isEventPast();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,6 +184,12 @@ export default function NuovoEventoPage() {
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     required
                   />
+                  {isPast && (
+                    <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Evento nel passato - potrai aggiungere la galleria foto
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -242,62 +262,69 @@ export default function NuovoEventoPage() {
           </Card>
 
           {/* Iscrizioni (solo eventi futuri) */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Iscrizioni</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="registrationLink">Link iscrizioni</Label>
-                  <Input
-                    id="registrationLink"
-                    value={form.registrationLink}
-                    onChange={(e) =>
-                      setForm({ ...form, registrationLink: e.target.value })
-                    }
-                    placeholder="https://forms.google.com/..."
-                  />
-                </div>
+          {!isPast && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Iscrizioni</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="registrationLink">Link iscrizioni</Label>
+                    <Input
+                      id="registrationLink"
+                      value={form.registrationLink}
+                      onChange={(e) =>
+                        setForm({ ...form, registrationLink: e.target.value })
+                      }
+                      placeholder="https://forms.google.com/..."
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="registrationDeadline">
-                    Scadenza iscrizioni
-                  </Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="date"
-                    value={form.registrationDeadline}
-                    onChange={(e) =>
-                      setForm({ ...form, registrationDeadline: e.target.value })
-                    }
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="registrationDeadline">
+                      Scadenza iscrizioni
+                    </Label>
+                    <Input
+                      id="registrationDeadline"
+                      type="date"
+                      value={form.registrationDeadline}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          registrationDeadline: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="fee">Quota partecipazione</Label>
-                  <Input
-                    id="fee"
-                    value={form.fee}
-                    onChange={(e) => setForm({ ...form, fee: e.target.value })}
-                    placeholder="Es: 10€ a persona"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="fee">Quota partecipazione</Label>
+                    <Input
+                      id="fee"
+                      value={form.fee}
+                      onChange={(e) =>
+                        setForm({ ...form, fee: e.target.value })
+                      }
+                      placeholder="Es: 10€ a persona"
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="locandina">Locandina (URL)</Label>
-                  <Input
-                    id="locandina"
-                    value={form.locandina}
-                    onChange={(e) =>
-                      setForm({ ...form, locandina: e.target.value })
-                    }
-                    placeholder="/locandine/eventi/torneo-2025/locandina.pdf"
-                  />
+                  <div>
+                    <Label htmlFor="locandina">Locandina (URL)</Label>
+                    <Input
+                      id="locandina"
+                      value={form.locandina}
+                      onChange={(e) =>
+                        setForm({ ...form, locandina: e.target.value })
+                      }
+                      placeholder="URL della locandina PDF o immagine"
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Contenuto */}
           <Card>
@@ -334,70 +361,71 @@ export default function NuovoEventoPage() {
             </CardContent>
           </Card>
 
-          {/* Media e Tags */}
+          {/* Media */}
           <Card>
             <CardHeader>
-              <CardTitle>Media e Tags</CardTitle>
+              <CardTitle>Media</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="coverImage">
-                    Immagine di copertina (URL)
-                  </Label>
-                  <Input
-                    id="coverImage"
-                    value={form.coverImage}
-                    onChange={(e) =>
-                      setForm({ ...form, coverImage: e.target.value })
-                    }
-                    placeholder="/images/eventi/torneo-2025/cover.jpg"
-                  />
-                </div>
+            <CardContent className="space-y-6">
+              {/* Cover Image */}
+              <ImageUploader
+                value={form.coverImage}
+                onChange={(url) => setForm({ ...form, coverImage: url })}
+                folder={`eventi/${form.slug || "temp"}`}
+                label="Immagine di copertina"
+                helperText="Immagine principale dell'evento, mostrata nell'hero e nelle card"
+                allowManualUrl={true}
+              />
 
-                <div>
-                  <Label htmlFor="imagesFolder">
-                    Cartella immagini (per eventi passati)
-                  </Label>
-                  <Input
-                    id="imagesFolder"
-                    value={form.imagesFolder}
-                    onChange={(e) =>
-                      setForm({ ...form, imagesFolder: e.target.value })
-                    }
-                    placeholder="eventi/torneo-2025"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Percorso relativo a public/images/
-                  </p>
-                </div>
+              {/* Galleria (solo per eventi passati) */}
+              {isPast && (
+                <>
+                  <div className="border-t pt-6">
+                    <GalleryUploader
+                      images={form.images}
+                      onChange={(urls) => setForm({ ...form, images: urls })}
+                      folder={`eventi/${form.slug || "temp"}`}
+                      label="Galleria Foto (evento passato)"
+                      maxImages={50}
+                      helperText="Carica le foto dell'evento. Verranno mostrate in un carosello nella pagina dettaglio."
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="googleDriveLink">
-                    Link Google Drive (galleria foto)
-                  </Label>
-                  <Input
-                    id="googleDriveLink"
-                    value={form.googleDriveLink}
-                    onChange={(e) =>
-                      setForm({ ...form, googleDriveLink: e.target.value })
-                    }
-                    placeholder="https://drive.google.com/drive/folders/..."
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Opzionale - mostrato solo per eventi passati con immagini
-                  </p>
-                </div>
+                  <div>
+                    <Label htmlFor="googleDriveLink">
+                      Link Google Drive (galleria completa)
+                    </Label>
+                    <Input
+                      id="googleDriveLink"
+                      value={form.googleDriveLink}
+                      onChange={(e) =>
+                        setForm({ ...form, googleDriveLink: e.target.value })
+                      }
+                      placeholder="https://drive.google.com/drive/folders/..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Opzionale - link alla cartella Drive con tutte le foto
+                    </p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-                <div>
-                  <Label htmlFor="tags">Tags (separati da virgola)</Label>
-                  <Input
-                    id="tags"
-                    value={form.tags}
-                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="torneo, misto, natale"
-                  />
-                </div>
+          {/* Tags */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label htmlFor="tags">Tags (separati da virgola)</Label>
+                <Input
+                  id="tags"
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="torneo, misto, natale"
+                />
               </div>
             </CardContent>
           </Card>

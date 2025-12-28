@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Loader2, FileText } from "lucide-react";
 import { use } from "react";
 import WysiwygEditor from "@/components/WysiwygEditor";
+import ImageUploader from "@/components/ImageUploader";
 
 export default function ModificaArticoloPage({
   params,
@@ -285,20 +286,16 @@ export default function ModificaArticoloPage({
               <CardTitle>Media e Tags</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="coverImage">Immagine di copertina (URL)</Label>
-                <Input
-                  id="coverImage"
-                  value={form.coverImage}
-                  onChange={(e) =>
-                    setForm({ ...form, coverImage: e.target.value })
-                  }
-                  placeholder="/images/gazzettino/giornata-5/cover.jpg"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Percorso relativo alla cartella public/
-                </p>
-              </div>
+              {/* Upload immagine copertina */}
+              <ImageUploader
+                value={form.coverImage}
+                onChange={(url) => setForm({ ...form, coverImage: url })}
+                folder={`gazzettino/${form.slug || "temp"}`}
+                label="Immagine di copertina"
+                helperText="Carica un'immagine o inserisci un URL. L'immagine verrà salvata su Supabase Storage."
+                showPreview={true}
+                allowManualUrl={true}
+              />
 
               <div>
                 <Label htmlFor="tags">Tags (separati da virgola)</Label>

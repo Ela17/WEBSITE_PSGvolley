@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
+import ImageUploader from "@/components/ImageUploader";
+import GalleryUploader from "@/components/GalleryUploader";
 
 export default function ModificaEventoPage({
   params,
@@ -46,7 +54,11 @@ export default function ModificaEventoPage({
     googleDriveLink: "",
     tags: "",
     content: "",
+    images: [] as string[], // Array di URL immagini gallery
   });
+
+  // Determina se l'evento è passato (per mostrare sezione gallery)
+  const isPastEvent = form.date ? new Date(form.date) < new Date() : false;
 
   // Carica evento esistente
   useEffect(() => {
@@ -78,6 +90,7 @@ export default function ModificaEventoPage({
             googleDriveLink: evento.google_drive_link || "",
             tags: evento.tags?.join(", ") || "",
             content: evento.content || "",
+            images: evento.images || [],
           });
         }
       } catch (err) {
@@ -110,6 +123,7 @@ export default function ModificaEventoPage({
             : [],
           registrationDeadline: form.registrationDeadline || null,
           googleDriveLink: form.googleDriveLink || null,
+          images: form.images, // Invia array immagini
         }),
       });
 
@@ -372,47 +386,71 @@ export default function ModificaEventoPage({
             </CardContent>
           </Card>
 
-          {/* Media e Tags */}
+          {/* Immagine Copertina */}
           <Card>
             <CardHeader>
-              <CardTitle>Media e Tags</CardTitle>
+              <CardTitle>Immagine di Copertina</CardTitle>
+              <CardDescription>
+                L'immagine principale che appare nell'hero dell'evento
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="coverImage">
-                    Immagine di copertina (URL)
-                  </Label>
-                  <Input
-                    id="coverImage"
-                    value={form.coverImage}
-                    onChange={(e) =>
-                      setForm({ ...form, coverImage: e.target.value })
-                    }
-                    placeholder="/images/eventi/torneo-2025/cover.jpg"
-                  />
-                </div>
+            <CardContent>
+              <ImageUploader
+                value={form.coverImage}
+                onChange={(url) => setForm({ ...form, coverImage: url })}
+                folder={`eventi/${form.slug || "temp"}`}
+                label="Cover Image"
+                helperText="Carica un'immagine o inserisci un URL. Formati: JPG, PNG, GIF, WebP. Max 5MB."
+                showPreview={true}
+                allowManualUrl={true}
+              />
+            </CardContent>
+          </Card>
 
-                <div>
-                  <Label htmlFor="imagesFolder">
-                    Cartella immagini (per eventi passati)
-                  </Label>
-                  <Input
-                    id="imagesFolder"
-                    value={form.imagesFolder}
-                    onChange={(e) =>
-                      setForm({ ...form, imagesFolder: e.target.value })
-                    }
-                    placeholder="eventi/torneo-2025"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Percorso relativo a public/images/
-                  </p>
-                </div>
+          {/* Galleria Immagini - Solo per eventi passati */}
+          {isPastEvent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Galleria Fotografica</CardTitle>
+                <CardDescription>
+                  Carica le foto dell'evento concluso. Queste verranno mostrate
+                  nel carosello.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <GalleryUploader
+                  images={form.images}
+                  onChange={(urls) => setForm({ ...form, images: urls })}
+                  folder={`eventi/${form.slug || "temp"}/gallery`}
+                  maxImages={50}
+                />
 
+                {/* Info su imagesFolder legacy */}
+                {form.imagesFolder && (
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg text-sm">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-blue-800">
+                        Immagini legacy
+                      </p>
+                      <p className="text-blue-700">
+                        Questo evento ha anche immagini nella cartella locale:{" "}
+                        <code className="bg-blue-100 px-1 rounded">
+                          {form.imagesFolder}
+                        </code>
+                      </p>
+                      <p className="text-blue-600 mt-1">
+                        Le nuove immagini caricate qui verranno mostrate insieme
+                        a quelle esistenti.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Link Google Drive */}
                 <div>
                   <Label htmlFor="googleDriveLink">
-                    Link Google Drive (galleria foto)
+                    Link Google Drive (galleria completa)
                   </Label>
                   <Input
                     id="googleDriveLink"
@@ -423,19 +461,54 @@ export default function ModificaEventoPage({
                     placeholder="https://drive.google.com/drive/folders/..."
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Opzionale - mostrato solo per eventi passati con immagini
+                    Opzionale - Link alla galleria completa su Drive
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          )}
 
+          {/* Sezione eventi futuri - imagesFolder legacy */}
+          {!isPastEvent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Media</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="tags">Tags (separati da virgola)</Label>
+                  <Label htmlFor="imagesFolder">
+                    Cartella immagini (per quando l'evento sarà passato)
+                  </Label>
                   <Input
-                    id="tags"
-                    value={form.tags}
-                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="torneo, misto, natale"
+                    id="imagesFolder"
+                    value={form.imagesFolder}
+                    onChange={(e) =>
+                      setForm({ ...form, imagesFolder: e.target.value })
+                    }
+                    placeholder="eventi/torneo-2025"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Opzionale - Percorso relativo a public/images/
+                  </p>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tags */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label htmlFor="tags">Tags (separati da virgola)</Label>
+                <Input
+                  id="tags"
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="torneo, misto, natale"
+                />
               </div>
             </CardContent>
           </Card>

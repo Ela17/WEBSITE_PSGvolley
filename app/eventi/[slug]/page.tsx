@@ -52,7 +52,8 @@ const typeLabelMap = {
 
 /**
  * Legge le immagini da una cartella in public/images/
- * Esclude la cover image e ritorna array di path
+ * LEGACY: per retrocompatibilità con eventi che usano imagesFolder
+ * @deprecated Usare array images dal database
  */
 function getImagesFromFolder(
   imagesFolder: string | undefined,
@@ -91,6 +92,31 @@ function getImagesFromFolder(
   }
 }
 
+/**
+ * Ottiene le immagini per un evento
+ * Priorità:
+ * 1. Array images dal database (Supabase Storage)
+ * 2. Legacy: imagesFolder (cartella locale)
+ */
+function getEventImages(evento: {
+  images: string[];
+  imagesFolder?: string;
+  coverImage: string;
+}): string[] {
+  // Se ci sono immagini nel DB, usa quelle
+  if (evento.images && evento.images.length > 0) {
+    // Filtra la cover image se presente nell'array
+    return evento.images.filter((img) => img !== evento.coverImage);
+  }
+
+  // Fallback legacy: leggi da cartella locale
+  if (evento.imagesFolder) {
+    return getImagesFromFolder(evento.imagesFolder, evento.coverImage);
+  }
+
+  return [];
+}
+
 // Genera i parametri statici per tutti gli eventi
 export async function generateStaticParams() {
   const [eventiFuturi, eventiPassati] = await Promise.all([
@@ -124,11 +150,8 @@ export default async function EventoDetailPage({
   // Calcola se l'evento è passato in base alla data
   const isPassato = isEventoPast(evento.date);
 
-  // Legge le immagini dalla cartella (escludendo la cover)
-  const eventImages = getImagesFromFolder(
-    evento.imagesFolder,
-    evento.coverImage
-  );
+  // Ottiene le immagini (da DB o cartella legacy)
+  const eventImages = getEventImages(evento);
 
   const Icon = iconMap[evento.type];
   const badgeColor = badgeColorMap[evento.type];
