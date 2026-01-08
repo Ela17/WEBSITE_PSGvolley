@@ -64,6 +64,7 @@ interface WysiwygEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: string;
+  maxHeight?: string; // Nuova prop per altezza massima
 }
 
 export default function WysiwygEditor({
@@ -71,6 +72,7 @@ export default function WysiwygEditor({
   onChange,
   placeholder = "Scrivi qui...",
   minHeight = "300px",
+  maxHeight = "500px", // Default 500px per area editor scrollabile
 }: WysiwygEditorProps) {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
@@ -204,9 +206,9 @@ export default function WysiwygEditor({
   const isInTable = editor.isActive("table");
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-background">
-      {/* Toolbar */}
-      <div className="border-b bg-muted/30 p-1 flex flex-wrap gap-0.5">
+    <div className="border rounded-lg overflow-hidden bg-background flex flex-col">
+      {/* Toolbar - sempre visibile, non scrollabile */}
+      <div className="border-b bg-muted/30 p-1 flex flex-wrap gap-0.5 flex-shrink-0">
         {/* Undo/Redo */}
         <div className="flex gap-0.5 mr-2">
           <Button
@@ -634,11 +636,13 @@ export default function WysiwygEditor({
         </Popover>
       </div>
 
-      {/* Editor */}
-      <EditorContent editor={editor} />
+      {/* Editor - area scrollabile con altezza massima */}
+      <div className="overflow-y-auto flex-1" style={{ maxHeight }}>
+        <EditorContent editor={editor} />
+      </div>
 
-      {/* Footer con conteggio */}
-      <div className="border-t bg-gray-50 px-4 py-2 text-xs text-muted-foreground flex justify-between">
+      {/* Footer con conteggio - sempre visibile */}
+      <div className="border-t bg-gray-50 px-4 py-2 text-xs text-muted-foreground flex justify-between flex-shrink-0">
         <span>{editor.storage.characterCount.characters()} caratteri</span>
         <span>{editor.storage.characterCount.words()} parole</span>
       </div>

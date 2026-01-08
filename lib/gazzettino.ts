@@ -1,7 +1,4 @@
 import { supabase, GazzettinoArticle } from './supabase';
-import { remark } from 'remark';
-import html from 'remark-html';
-import gfm from 'remark-gfm';
 
 // Interfacce compatibili con il codice esistente
 export interface GazzettinoPost {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -11,6 +11,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 
 interface ImageCarouselProps {
@@ -24,15 +25,73 @@ export default function ImageCarousel({
 }: ImageCarouselProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [mainApi, setMainApi] = useState<CarouselApi>();
+  const [fullscreenApi, setFullscreenApi] = useState<CarouselApi>();
+
+  // Sync main carousel index
+  useEffect(() => {
+    if (!mainApi) return;
+
+    const onSelect = () => {
+      setCurrentIndex(mainApi.selectedScrollSnap());
+    };
+
+    mainApi.on("select", onSelect);
+    onSelect(); // Set initial
+
+    return () => {
+      mainApi.off("select", onSelect);
+    };
+  }, [mainApi]);
+
+  // Sync fullscreen carousel index
+  useEffect(() => {
+    if (!fullscreenApi) return;
+
+    const onSelect = () => {
+      setCurrentIndex(fullscreenApi.selectedScrollSnap());
+    };
+
+    fullscreenApi.on("select", onSelect);
+
+    return () => {
+      fullscreenApi.off("select", onSelect);
+    };
+  }, [fullscreenApi]);
+
+  // Scroll to index when opening fullscreen
+  useEffect(() => {
+    if (isFullscreen && fullscreenApi) {
+      fullscreenApi.scrollTo(currentIndex, true);
+    }
+  }, [isFullscreen, fullscreenApi, currentIndex]);
+
+  // Click thumbnail
+  const handleThumbnailClick = useCallback(
+    (index: number) => {
+      setCurrentIndex(index);
+      mainApi?.scrollTo(index);
+    },
+    [mainApi]
+  );
+
+  // Open fullscreen at current index
+  const openFullscreen = useCallback(() => {
+    setIsFullscreen(true);
+  }, []);
 
   if (images.length === 0) return null;
 
   return (
     <>
       <Card className="overflow-hidden border-0 shadow-lg">
-        {/* Carousel principale - senza header */}
+        {/* Carousel principale */}
         <div className="relative bg-gray-100">
-          <Carousel className="w-full" opts={{ loop: true }}>
+          <Carousel
+            className="w-full"
+            opts={{ loop: true }}
+            setApi={setMainApi}
+          >
             <CarouselContent>
               {images.map((image, index) => (
                 <CarouselItem key={index}>
@@ -45,10 +104,7 @@ export default function ImageCarousel({
                       alt={`${eventTitle} - Foto ${index + 1}`}
                       fill
                       className="object-contain cursor-pointer hover:opacity-95 transition-opacity"
-                      onClick={() => {
-                        setCurrentIndex(index);
-                        setIsFullscreen(true);
-                      }}
+                      onClick={openFullscreen}
                     />
                   </div>
                 </CarouselItem>
@@ -66,34 +122,26 @@ export default function ImageCarousel({
         {/* Thumbnails */}
         {images.length > 1 && (
           <div className="p-4 bg-gray-50">
-            <Carousel
-              opts={{
-                align: "start",
-                dragFree: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2">
-                {images.map((image, index) => (
-                  <CarouselItem
-                    key={index}
-                    className="pl-2 basis-1/4 sm:basis-1/6 md:basis-1/8"
-                  >
-                    <button
-                      onClick={() => setCurrentIndex(index)}
-                      className="relative w-full aspect-square rounded-md overflow-hidden border-2 hover:border-blue-500 transition-all"
-                    >
-                      <Image
-                        src={image}
-                        alt={`Thumbnail ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </button>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleThumbnailClick(index)}
+                  className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                    currentIndex === index
+                      ? "border-blue-500 ring-2 ring-blue-300"
+                      : "border-transparent hover:border-gray-300"
+                  }`}
+                >
+                  <Image
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </Card>
@@ -114,7 +162,7 @@ export default function ImageCarousel({
               setIsFullscreen(false);
             }}
           >
-            <X className="h-6 w-6" />
+            <X className="size-6" />
           </Button>
 
           {/* Carousel fullscreen */}
@@ -124,10 +172,8 @@ export default function ImageCarousel({
           >
             <Carousel
               className="w-full max-w-7xl"
-              opts={{
-                loop: true,
-                startIndex: currentIndex,
-              }}
+              opts={{ loop: true, startIndex: currentIndex }}
+              setApi={setFullscreenApi}
             >
               <CarouselContent>
                 {images.map((image, index) => (

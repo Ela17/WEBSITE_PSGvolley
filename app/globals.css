@@ -210,53 +210,69 @@
 }
 
 /* ============================================
-   TABELLE - Stile unificato
-   Gestisce sia tabelle con <thead> che senza
-   (alcuni editor WYSIWYG mettono <th> in <tbody>)
+   TABELLE - Stili base + scroll mobile
    ============================================ */
 
 .prose table {
   @apply w-full border-collapse mb-6 text-sm;
 }
 
-/* Header tradizionale con <thead> */
 .prose thead {
   @apply bg-muted;
 }
 
-.prose thead tr {
-  @apply bg-muted;
-}
-
-/* 
- * Stile per <th> OVUNQUE si trovi
- * Funziona sia in <thead> che in <tbody> (editor WYSIWYG)
- */
 .prose th {
   @apply border border-border px-4 py-2 text-left font-semibold bg-muted;
 }
 
-/* Celle dati */
 .prose td {
   @apply border border-border px-4 py-2;
 }
 
-/* 
- * Riga con <th> dentro <tbody> (output tipico editor WYSIWYG)
- * Applica sfondo header alla prima riga se contiene <th>
- */
+.prose tbody tr:hover {
+  @apply bg-muted/50;
+}
+
+/* Riga con th in tbody (editor WYSIWYG) */
 .prose tbody tr:has(th) {
   @apply bg-muted;
 }
 
-/* Hover solo su righe con <td> (non sull'header) */
-.prose tbody tr:not(:has(th)):hover {
-  @apply bg-muted/50;
-}
+/* Scroll orizzontale su mobile */
+@media (max-width: 640px) {
+  /* Wrapper per indicatore scroll */
+  .prose table {
+    @apply block overflow-x-auto rounded-lg;
+    -webkit-overflow-scrolling: touch;
+    /* Scrollbar sempre visibile */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+    /* Ombra interna a destra per indicare scroll */
+    box-shadow: inset -20px 0 20px -20px rgba(0, 0, 0, 0.15);
+  }
 
-/* Righe alternate - solo su righe dati, non header */
-.prose tbody tr:not(:has(th)):nth-child(even) {
-  @apply bg-muted/20;
+  /* Scrollbar per WebKit (Chrome, Safari) */
+  .prose table::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .prose table::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+
+  .prose table::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded-full;
+    border: 2px solid #f1f5f9;
+  }
+
+  .prose table::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+
+  .prose th,
+  .prose td {
+    @apply px-2 py-2 text-xs whitespace-nowrap;
+  }
 }
 
 /* ============================================

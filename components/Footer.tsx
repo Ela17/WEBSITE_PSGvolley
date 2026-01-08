@@ -48,7 +48,7 @@ export default function Footer() {
                 className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
               >
                 <FaInstagram className="w-5 h-5" />
-                <span className="text-sm">@asd_patrocinosgiuseppe</span>
+                <span className="text-sm">@asd_patrociniosgiuseppe</span>
               </Link>
             </div>
 

@@ -33,7 +33,7 @@ export default function Navbar() {
               alt="Logo"
               width={150}
               height={50}
-              className="object-contain"
+              className="object-contain max-w-[120px] sm:max-w-none"
             />
           </Link>
 
@@ -62,7 +62,7 @@ export default function Navbar() {
             className="md:hidden"
             onClick={() => setIsOpen(!isOpen)}
           >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isOpen ? <X className="size-7" /> : <Menu className="size-7" />}
           </Button>
         </div>
 
