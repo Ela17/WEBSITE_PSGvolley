@@ -6,6 +6,11 @@ import CalendarView from "@/components/CalendarView";
 import RankingTable from "@/components/RankingTable";
 import { ExternalLink } from "lucide-react";
 
+// ⚠️ FIX: Forza il refresh dei dati ad ogni richiesta
+// Opzione 1: revalidate = 0 → sempre fresco (no cache)
+// Opzione 2: revalidate = 60 → ricarica ogni 60 secondi (ISR)
+export const revalidate = 0; // Disabilita il caching statico
+
 export default async function CampionatoPage() {
   // Carica dati dal database
   const [masterRanking, openRanking, allEvents] = await Promise.all([
