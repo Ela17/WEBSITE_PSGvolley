@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HeartCrack, Calendar, Tag } from "lucide-react";
 
+export const revalidate = 0;
+
 export default async function GazzettinoPage() {
   const allPosts = await getAllGazzettinoPostsPreview();
 

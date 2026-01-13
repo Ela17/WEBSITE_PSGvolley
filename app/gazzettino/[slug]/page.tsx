@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Calendar, User, Tag as TagIcon } from "lucide-react";
 
+export const revalidate = 0;
+
 // Genera i path statici per tutti gli articoli
 export async function generateStaticParams() {
   const slugs = await getAllGazzettinoSlugs();

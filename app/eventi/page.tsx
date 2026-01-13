@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, Trophy, PartyPopper } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+export const revalidate = 0;
+
 // Mappa per le icone dei tipi di evento
 const iconMap = {
   torneo: Trophy,

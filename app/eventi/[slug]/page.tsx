@@ -27,6 +27,8 @@ import {
 import ImageCarousel from "@/components/ImagesCarousel";
 import LocandinaPreview from "@/components/LocandinaPreview";
 
+export const revalidate = 0;
+
 // Mappa per le icone dei tipi di evento
 const iconMap = {
   torneo: Trophy,
