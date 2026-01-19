@@ -8,6 +8,9 @@ import { it } from "date-fns/locale";
 import { getCategoriaLabel } from "@/lib/campionato-types";
 import NextMatchCard from "@/components/NextMatchCard";
 
+// Forza il refresh dei dati ad ogni richiesta (no cache)
+export const revalidate = 0;
+
 export default async function Home() {
   // Carica l'ultimo post del Gazzettino
   const latestPost = (await getLatestGazzettinoPosts(1))[0] || null;
