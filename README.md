@@ -19,14 +19,14 @@ Le nostre squadre di pallavolo mista competono nei campionati UISP di Torino nel
 
 ## 🎯 Panoramica
 
-Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG una presenza web funzionale e coinvolgente. Attualmente è un **progetto interno** hostato su Netlify, pensato per giocatori, famiglie e appassionati della squadra, che serve anche come dimostrazione di competenze nello sviluppo web moderno.
+Questo progetto è stato sviluppato per fornire alla sezione pallavolo del PSG una presenza web funzionale e coinvolgente. Attualmente è un **progetto interno** hostato su Vercel, pensato per giocatori, famiglie e appassionati della squadra, che serve anche come dimostrazione di competenze nello sviluppo web moderno.
 
 ### Architettura Attuale
 
-- **Hosting**: [Netlify](https://www.netlify.com/) con deploy automatico da Git
+- **Hosting**: [Vercel](https://vercel.com/) con deploy automatico da Git
 - **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
 - **Contenuti**: Database-driven con backup file-based (Markdown + CSV)
-- **Dominio**: Interno (netlify.app) - dominio personalizzato previsto per versione ufficiale futura
+- **Dominio**: Interno (vercel.app) - dominio personalizzato previsto per versione ufficiale futura
 
 ### Obiettivi del Progetto
 
@@ -322,17 +322,17 @@ npm run migrate:all         # Migra tutto
 
 ## 🚀 Deployment
 
-### Netlify (Attuale)
+### Vercel (Attuale)
 
-Il sito è attualmente hostato su Netlify con deploy automatico:
+Il sito è attualmente hostato su Vercel con deploy automatico:
 
 - **Branch principale**: `main` → deploy in produzione automatico
 - **Build command**: `npm run build`
-- **Publish directory**: `.next`
+- **Output directory**: `.next`
 - **Node version**: 20.x
 
-**Variabili d'ambiente su Netlify:**
-Configurare in Site Settings → Environment Variables:
+**Variabili d'ambiente su Vercel:**
+Configurare in Project Settings → Environment Variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -428,6 +428,8 @@ tags: [torneo, open, primavera]
 - ✅ CRUD Gazzettino
 - ✅ CRUD Eventi
 - ✅ Gestione risultati partite
+- ✅ Upload immagini su Supabase Storage
+- ✅ Editor WYSIWYG con Tiptap
 
 ### UI/UX
 - ✅ Navbar sticky con indicatore pagina attiva
@@ -440,8 +442,8 @@ tags: [torneo, open, primavera]
 ## 🗺 Roadmap
 
 ### Prossimi Passi
-- 📝 Upload immagini diretto da admin panel (Supabase Storage)
-- 📝 Editor visuale WYSIWYG per articoli
+- 📝 Miglioramenti UX admin panel
+- 📝 Ottimizzazioni performance
 
 ### Evoluzione Futura
 - 🌐 **Dominio personalizzato**
@@ -458,12 +460,13 @@ Sezione Pallavolo - ASD Patrocinio San Giuseppe, Torino
 
 ## 📄 Licenza
 
-Questo progetto è sviluppato come progetto interno per la sezione pallavolo dell'ASD Patrocinio San Giuseppe.  
-© 2025 ASD Patrocinio San Giuseppe - Sezione Pallavolo. Tutti i diritti riservati.
+**Codice sorgente**: © 2025 Elena Derosas. Tutti i diritti riservati.
+
+**Contenuti** (testi, fotografie, loghi, grafiche): © 2025 ASD Patrocinio San Giuseppe - Sezione Pallavolo. Tutti i diritti riservati.
 
 ## 🔗 Link Utili
 
-- 🌐 **Sito Web**: [Progetto interno su Netlify](https://asdpatrociniosangiuseppe-volley.netlify.app/)
+- 🌐 **Sito Web**: [https://asd-psg-volley.vercel.app/](https://asd-psg-volley.vercel.app/)
 - 📱 **Instagram**: [@asd_patrocinosgiuseppe](https://www.instagram.com/asd_patrociniosgiuseppe/)
 - 📍 **Sede**: [Via Pietro Baiardi 4, Torino](https://www.google.com/search?q=maps+via+pietro+baiardi+4+torino)
 - 🏐 **UISP Torino**: [Classifiche e Regolamenti](https://sites.google.com/view/uisppallavolopiemonte/home-page)

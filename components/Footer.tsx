@@ -89,11 +89,11 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-6 pt-4 text-center text-sm text-gray-400">
           <p className="inline-flex items-center">
             <FaRegCopyright className="align-middle mr-1" />
-            {new Date().getFullYear()} ASD Patrocinio San Giuseppe. Tutti i
-            diritti riservati.
+            {new Date().getFullYear()} ASD Patrocinio San Giuseppe (contenuti)
           </p>
           <p className="mt-1">
-            Sviluppato da Elena Derosas.
+            <FaRegCopyright className="inline-block align-middle mr-1" />
+            {new Date().getFullYear()} Elena Derosas (sviluppo)
             <a
               href="https://github.com/Ela17"
               target="_blank"
