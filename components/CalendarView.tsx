@@ -247,7 +247,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                         )}
                         {event.palestra && (
                           <a
-                            href={getGoogleMapsLink(event.palestra)}
+                            href={getGoogleMapsLink(event.indirizzo_maps || event.palestra)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}

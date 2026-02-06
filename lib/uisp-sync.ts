@@ -568,6 +568,13 @@ function compareMatches(
     );
   }
 
+  // Confronta indirizzo_maps
+  if (dbMatch.indirizzo_maps !== uispMatch.indirizzo_maps) {
+    changes.push(
+      `Indirizzo Maps: ${dbMatch.indirizzo_maps || "N/D"} → ${uispMatch.indirizzo_maps || "N/D"}`,
+    );
+  }
+
   // Confronta risultato
   if (
     dbMatch.set_a_vinti !== uispMatch.set_a_vinti ||

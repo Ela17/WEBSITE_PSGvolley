@@ -17,6 +17,7 @@ export interface MatchResult {
   Separatore: string;
   'Squadra B': string;
   PALESTRA: string;
+  INDIRIZZO_MAPS: string | null;
   NOTE: string;
   SetA_Vinti: string;
   SetB_Vinti: string;
@@ -45,6 +46,7 @@ function dbToMatchResult(match: DBMatch): MatchResult {
     Separatore: '-',
     'Squadra B': match.squadra_b,
     PALESTRA: match.palestra || '',
+    INDIRIZZO_MAPS: match.indirizzo_maps || null,
     NOTE: match.note || '',
     SetA_Vinti: match.set_a_vinti?.toString() || '',
     SetB_Vinti: match.set_b_vinti?.toString() || '',
@@ -73,6 +75,7 @@ function dbToCalendarEvent(match: DBMatch): CalendarEvent {
     squadraA: match.squadra_a,
     squadraB: match.squadra_b,
     palestra: match.palestra || '',
+    indirizzo_maps: match.indirizzo_maps || null,
     note: match.note || '',
     categoria: match.categoria,
     categoriaOriginale: match.categoria === 'master' ? '4+2' : 'OPMSB',
@@ -202,6 +205,7 @@ export function convertToCalendarEvent(
     squadraA: match['Squadra A'] || '',
     squadraB: match['Squadra B'] || '',
     palestra: match.PALESTRA || '',
+    indirizzo_maps: match.INDIRIZZO_MAPS || null,
     note: match.NOTE || '',
     categoria,
     categoriaOriginale: match.CAT || '',

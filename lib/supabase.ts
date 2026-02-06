@@ -52,6 +52,7 @@ export interface DBMatch {
   squadra_a: string;
   squadra_b: string;
   palestra: string | null;
+  indirizzo_maps: string | null;
   note: string | null;
   set_a_vinti: number | null;
   set_b_vinti: number | null;

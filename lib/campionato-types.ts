@@ -38,7 +38,7 @@ export interface CalendarEvent {
   squadraA: string;
   squadraB: string;
   palestra: string;
-  indirizzo_maps?: string;
+  indirizzo_maps: string | null;
   note: string;
   categoria: "master" | "open";
   categoriaOriginale: string;
