@@ -38,6 +38,7 @@ export interface CalendarEvent {
   squadraA: string;
   squadraB: string;
   palestra: string;
+  indirizzo_maps?: string;
   note: string;
   categoria: "master" | "open";
   categoriaOriginale: string;
@@ -125,7 +126,11 @@ export function formatDateItalian(dateStr: string): string {
  * Formatta una data in formato "Lun 22/01/2026" (giorno settimana abbreviato + data)
  */
 export function formatDateWithWeekday(dateStr: string): string {
+  if (!dateStr) return "Da definire";
+
   const date = parseItalianDate(dateStr);
+  if (isNaN(date.getTime())) return "Da definire";
+  
   const weekdays = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
   const weekday = weekdays[date.getDay()];
   const day = date.getDate().toString().padStart(2, "0");

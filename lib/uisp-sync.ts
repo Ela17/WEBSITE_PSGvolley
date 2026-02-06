@@ -15,16 +15,19 @@ import { createAdminClient } from "./supabase";
 // ============================================
 
 // URL per export CSV da Google Sheets
+// Formato: https://docs.google.com/spreadsheets/d/{ID}/export?format=csv&gid={GID}
 const UISP_SHEETS = {
   master: {
     url: "https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/export?format=csv&gid=1144088727",
     categoria: "master" as const,
-    categoryIdentifier: "4+2", // Valore in colonna A che identifica le righe valide
+    categoryIdentifier: "4+2",
+    maxNumeroGara: null, // Nessun limite
   },
   open: {
     url: "https://docs.google.com/spreadsheets/d/17hDPCNtiHUIJ-zQ4FyDCoJFfjy9j5U8g/export?format=csv&gid=792185880",
     categoria: "open" as const,
-    categoryIdentifier: "OPMSB", // Valore in colonna A che identifica le righe valide
+    categoryIdentifier: "OPMSB",
+    maxNumeroGara: 742191, // Fino alla 13^ giornata
   },
 };
 
@@ -40,6 +43,7 @@ export interface ParsedMatch {
   squadra_a: string;
   squadra_b: string;
   palestra: string | null;
+  indirizzo_maps: string | null; // Indirizzo pulito per Google Maps
   note: string | null;
   set_a_vinti: number | null;
   set_b_vinti: number | null;
@@ -179,34 +183,213 @@ function parseIntOrNull(value: string | undefined): number | null {
 }
 
 /**
+ * Pulisce l'indirizzo palestra UISP per renderlo compatibile con Google Maps
+ *
+ * Pattern UISP tipici:
+ * - "Pal. Nievo - C-so Moncalieri, 43 – TO - MAX 3Sp / Squadra"
+ * - "Pal. Com. - Piazza della Concordia Givoletto TO ingresso retro pal."
+ *
+ * Output: "Corso Moncalieri 43, Torino"
+ */
+function cleanPalestra(raw: string | null | undefined): string | null {
+  if (!raw || raw.trim() === "") {
+    return null;
+  }
+
+  const original = raw.trim();
+
+  // Skip casi speciali
+  if (original === "RIPOSO" || original.length < 5) {
+    return original;
+  }
+
+  // Mappa abbreviazioni → forma estesa
+  const abbreviazioni: [RegExp, string][] = [
+    [/\bC-so\b/gi, "Corso"],
+    [/\bC\.so\b/gi, "Corso"],
+    [/\bV-le\b/gi, "Viale"],
+    [/\bV\.le\b/gi, "Viale"],
+    [/\bP-za\b/gi, "Piazza"],
+    [/\bP\.za\b/gi, "Piazza"],
+    [/\bP\.zza\b/gi, "Piazza"],
+    [/\bP-tta\b/gi, "Piazzetta"],
+    [/\bStr\.\b/gi, "Strada"],
+    [/\bL-go\b/gi, "Largo"],
+    [/\bL\.go\b/gi, "Largo"],
+    [/\bC\.se\b/gi, "Canavese"],
+  ];
+
+  // Mappa sigle città → nome completo
+  const sigleCitta: Record<string, string> = {
+    TO: "Torino",
+    MI: "Milano",
+    CN: "Cuneo",
+    AT: "Asti",
+    AL: "Alessandria",
+    NO: "Novara",
+    VC: "Vercelli",
+    BI: "Biella",
+  };
+
+  // Pattern che indicano l'inizio di un indirizzo
+  const patternIndirizzo =
+    /\b(Via|Viale|Corso|Piazza|Piazzetta|Strada|Largo|C-so|V-le|P-za|P\.za|Str\.)\s+/i;
+
+  try {
+    let text = original;
+
+    // 0. Estrai la città PRIMA di modificare il testo
+    let cittaTrovata = "";
+    for (const [sigla, nome] of Object.entries(sigleCitta)) {
+      const regex = new RegExp(`\\b${sigla}\\b`, "g");
+      if (regex.test(text)) {
+        cittaTrovata = nome;
+        break;
+      }
+    }
+    // Cerca anche nomi città completi
+    if (!cittaTrovata) {
+      for (const nome of Object.values(sigleCitta)) {
+        if (text.toLowerCase().includes(nome.toLowerCase())) {
+          cittaTrovata = nome;
+          break;
+        }
+      }
+    }
+
+    // 1. Espandi abbreviazioni
+    for (const [regex, replacement] of abbreviazioni) {
+      text = text.replace(regex, replacement);
+    }
+
+    // 2. Cerca dove inizia l'indirizzo vero
+    const match = text.match(patternIndirizzo);
+    if (match && match.index !== undefined) {
+      text = text.substring(match.index);
+    }
+
+    // 3. Rimuovi note comuni alla fine
+    text = text.replace(
+      /\s+(ingresso|H\s*\d|MAX|ultimo|retro|cancello).*$/i,
+      "",
+    );
+
+    // 4. Rimuovi testo dopo " - " se sembra una nota
+    const parts = text.split(/\s+[-–]\s+/);
+    if (parts.length > 1) {
+      const validParts = parts.filter(
+        (p) =>
+          /\d/.test(p) ||
+          patternIndirizzo.test(p) ||
+          /^[A-Z]{2}$/.test(p.trim()),
+      );
+      if (validParts.length > 0) {
+        text = validParts.join(" ");
+      } else {
+        text = parts[0];
+      }
+    }
+
+    // 5. Rimuovi sigla città (sarà aggiunta alla fine)
+    for (const sigla of Object.keys(sigleCitta)) {
+      const regex = new RegExp(`\\s*\\b${sigla}\\b\\s*`, "g");
+      text = text.replace(regex, " ");
+    }
+
+    // 6. Normalizza il case di Via, Corso, etc.
+    text = text.replace(
+      /\b(via|corso|viale|piazza|piazzetta|strada|largo)\b/gi,
+      (match) => match.charAt(0).toUpperCase() + match.slice(1).toLowerCase(),
+    );
+
+    // 7. Pulizia finale
+    text = text
+      .replace(/,\s*(\d)/g, " $1")
+      .replace(/\s+/g, " ")
+      .replace(/\s*[-–]\s*$/, "")
+      .trim();
+
+    // 8. Aggiungi città se trovata e non già presente
+    if (
+      cittaTrovata &&
+      !text.toLowerCase().includes(cittaTrovata.toLowerCase())
+    ) {
+      text = `${text}, ${cittaTrovata}`;
+    }
+
+    if (text.length < 5) {
+      return original;
+    }
+
+    return text;
+  } catch {
+    console.warn(`[cleanPalestra] Errore parsing: "${original}"`);
+    return original;
+  }
+}
+
+/**
  * Parsa il CSV grezzo in array di righe
- * Gestisce correttamente i campi con virgole tra virgolette
+ * Gestisce correttamente i campi con virgole e newline tra virgolette
  */
 function parseCSV(csvText: string): string[][] {
   const rows: string[][] = [];
-  const lines = csvText.split("\n");
+  let currentRow: string[] = [];
+  let currentField = "";
+  let inQuotes = false;
 
-  for (const line of lines) {
-    if (line.trim() === "") continue;
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    const nextChar = csvText[i + 1];
 
-    const row: string[] = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
-        row.push(current.trim());
-        current = "";
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote ("") -> singola virgoletta
+        currentField += '"';
+        i++; // Salta la prossima virgoletta
       } else {
-        current += char;
+        // Toggle quote mode
+        inQuotes = !inQuotes;
       }
+    } else if (char === "," && !inQuotes) {
+      // Fine campo
+      currentRow.push(currentField.trim());
+      currentField = "";
+    } else if (
+      (char === "\n" || (char === "\r" && nextChar === "\n")) &&
+      !inQuotes
+    ) {
+      // Fine riga (gestisce sia \n che \r\n)
+      if (char === "\r") i++; // Salta \n dopo \r
+
+      currentRow.push(currentField.trim());
+      if (currentRow.some((cell) => cell !== "")) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = "";
+    } else if (char === "\r" && !inQuotes) {
+      // Solo \r come fine riga (raro ma possibile)
+      currentRow.push(currentField.trim());
+      if (currentRow.some((cell) => cell !== "")) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = "";
+    } else if (char === "\n" && inQuotes) {
+      // Newline dentro campo quotato -> sostituisci con spazio
+      currentField += " ";
+    } else {
+      currentField += char;
     }
-    row.push(current.trim());
-    rows.push(row);
+  }
+
+  // Ultima riga (se non termina con newline)
+  if (currentField || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some((cell) => cell !== "")) {
+      rows.push(currentRow);
+    }
   }
 
   return rows;
@@ -219,10 +402,7 @@ function parseCSV(csvText: string): string[][] {
 /**
  * Verifica se una riga è valida (non intestazione, non giornata, non riposo)
  */
-function isValidMatchRow(
-  row: string[],
-  categoryIdentifier: string
-): boolean {
+function isValidMatchRow(row: string[], categoryIdentifier: string): boolean {
   if (row.length < 8) return false;
 
   const category = row[0]?.trim();
@@ -261,7 +441,7 @@ function isValidMatchRow(
  */
 function parseMatchRow(
   row: string[],
-  categoria: "master" | "open"
+  categoria: "master" | "open",
 ): ParsedMatch {
   // Punteggi set
   const punteggiSet: Array<{ pts_a: number; pts_b: number }> = [];
@@ -282,6 +462,8 @@ function parseMatchRow(
     }
   }
 
+  const palestraRaw = row[7]?.trim() || null;
+
   return {
     categoria,
     numero_gara: row[1]?.trim() || "",
@@ -289,7 +471,8 @@ function parseMatchRow(
     ora: parseUISPTime(row[3]),
     squadra_a: row[4]?.trim() || "",
     squadra_b: row[6]?.trim() || "",
-    palestra: row[7]?.trim() || null,
+    palestra: palestraRaw,
+    indirizzo_maps: cleanPalestra(palestraRaw),
     note: row[8]?.trim() || null,
     set_a_vinti: parseIntOrNull(row[9]),
     set_b_vinti: parseIntOrNull(row[10]),
@@ -303,7 +486,8 @@ function parseMatchRow(
 function parseUISPCSV(
   csvText: string,
   categoria: "master" | "open",
-  categoryIdentifier: string
+  categoryIdentifier: string,
+  maxNumeroGara: number | null = null,
 ): ParsedMatch[] {
   const rows = parseCSV(csvText);
   const matches: ParsedMatch[] = [];
@@ -312,7 +496,12 @@ function parseUISPCSV(
     if (isValidMatchRow(row, categoryIdentifier)) {
       const match = parseMatchRow(row, categoria);
 
-      // Validazione finale: deve avere numero gara e almeno una squadra
+      // Filtro per numero gara massimo
+      if (maxNumeroGara !== null) {
+        const numeroGaraInt = parseInt(match.numero_gara, 10);
+        if (numeroGaraInt > maxNumeroGara) continue;
+      }
+
       if (match.numero_gara && match.squadra_a && match.squadra_b) {
         matches.push(match);
       }
@@ -338,7 +527,7 @@ async function downloadCSV(url: string): Promise<string> {
 
   if (!response.ok) {
     throw new Error(
-      `Errore download CSV: ${response.status} ${response.statusText}`
+      `Errore download CSV: ${response.status} ${response.statusText}`,
     );
   }
 
@@ -354,7 +543,7 @@ async function downloadCSV(url: string): Promise<string> {
  */
 function compareMatches(
   dbMatch: ParsedMatch | null,
-  uispMatch: ParsedMatch
+  uispMatch: ParsedMatch,
 ): { isDifferent: boolean; changes: string[] } {
   if (!dbMatch) {
     return { isDifferent: true, changes: ["Nuova partita"] };
@@ -375,7 +564,7 @@ function compareMatches(
   // Confronta palestra
   if (dbMatch.palestra !== uispMatch.palestra) {
     changes.push(
-      `Palestra: ${dbMatch.palestra || "N/D"} → ${uispMatch.palestra || "N/D"}`
+      `Palestra: ${dbMatch.palestra || "N/D"} → ${uispMatch.palestra || "N/D"}`,
     );
   }
 
@@ -413,7 +602,7 @@ function compareMatches(
  */
 async function syncCategoria(
   categoria: "master" | "open",
-  matches: ParsedMatch[]
+  matches: ParsedMatch[],
 ): Promise<{
   nuovi: number;
   aggiornati: number;
@@ -438,8 +627,17 @@ async function syncCategoria(
     .eq("categoria", categoria);
 
   if (fetchError) {
-    errors.push(`Errore caricamento partite ${categoria}: ${fetchError.message}`);
-    return { nuovi, aggiornati, invariati, errori: matches.length, changes, errors };
+    errors.push(
+      `Errore caricamento partite ${categoria}: ${fetchError.message}`,
+    );
+    return {
+      nuovi,
+      aggiornati,
+      invariati,
+      errori: matches.length,
+      changes,
+      errors,
+    };
   }
 
   // Crea mappa per lookup veloce
@@ -453,6 +651,7 @@ async function syncCategoria(
       squadra_a: m.squadra_a,
       squadra_b: m.squadra_b,
       palestra: m.palestra,
+      indirizzo_maps: m.indirizzo_maps,
       note: m.note,
       set_a_vinti: m.set_a_vinti,
       set_b_vinti: m.set_b_vinti,
@@ -485,6 +684,7 @@ async function syncCategoria(
       squadra_a: match.squadra_a,
       squadra_b: match.squadra_b,
       palestra: match.palestra,
+      indirizzo_maps: match.indirizzo_maps,
       note: match.note,
       set_a_vinti: match.set_a_vinti,
       set_b_vinti: match.set_b_vinti,
@@ -502,7 +702,7 @@ async function syncCategoria(
     if (upsertError) {
       errori++;
       errors.push(
-        `Errore sync gara ${match.numero_gara}: ${upsertError.message}`
+        `Errore sync gara ${match.numero_gara}: ${upsertError.message}`,
       );
       continue;
     }
@@ -554,8 +754,10 @@ export async function syncFromUISP(): Promise<SyncReport> {
     const masterMatches = parseUISPCSV(
       masterCSV,
       UISP_SHEETS.master.categoria,
-      UISP_SHEETS.master.categoryIdentifier
+      UISP_SHEETS.master.categoryIdentifier,
+      UISP_SHEETS.master.maxNumeroGara,
     );
+
     console.log(`[UISP Sync] Master: ${masterMatches.length} partite trovate`);
 
     report.master.totale = masterMatches.length;
@@ -574,7 +776,8 @@ export async function syncFromUISP(): Promise<SyncReport> {
     const openMatches = parseUISPCSV(
       openCSV,
       UISP_SHEETS.open.categoria,
-      UISP_SHEETS.open.categoryIdentifier
+      UISP_SHEETS.open.categoryIdentifier,
+      UISP_SHEETS.open.maxNumeroGara,
     );
     console.log(`[UISP Sync] Open: ${openMatches.length} partite trovate`);
 
@@ -592,8 +795,12 @@ export async function syncFromUISP(): Promise<SyncReport> {
     report.success = report.errors.length === 0;
 
     console.log("[UISP Sync] Sincronizzazione completata");
-    console.log(`  Master: ${report.master.nuovi} nuovi, ${report.master.aggiornati} aggiornati`);
-    console.log(`  Open: ${report.open.nuovi} nuovi, ${report.open.aggiornati} aggiornati`);
+    console.log(
+      `  Master: ${report.master.nuovi} nuovi, ${report.master.aggiornati} aggiornati`,
+    );
+    console.log(
+      `  Open: ${report.open.nuovi} nuovi, ${report.open.aggiornati} aggiornati`,
+    );
 
     return report;
   } catch (error) {
@@ -622,11 +829,12 @@ export async function previewSync(): Promise<{
     master = parseUISPCSV(
       masterCSV,
       UISP_SHEETS.master.categoria,
-      UISP_SHEETS.master.categoryIdentifier
+      UISP_SHEETS.master.categoryIdentifier,
+      UISP_SHEETS.master.maxNumeroGara,
     );
   } catch (error) {
     errors.push(
-      `Errore download Master: ${error instanceof Error ? error.message : "sconosciuto"}`
+      `Errore download Master: ${error instanceof Error ? error.message : "sconosciuto"}`,
     );
   }
 
@@ -635,11 +843,12 @@ export async function previewSync(): Promise<{
     open = parseUISPCSV(
       openCSV,
       UISP_SHEETS.open.categoria,
-      UISP_SHEETS.open.categoryIdentifier
+      UISP_SHEETS.open.categoryIdentifier,
+      UISP_SHEETS.open.maxNumeroGara,
     );
   } catch (error) {
     errors.push(
-      `Errore download Open: ${error instanceof Error ? error.message : "sconosciuto"}`
+      `Errore download Open: ${error instanceof Error ? error.message : "sconosciuto"}`,
     );
   }
 

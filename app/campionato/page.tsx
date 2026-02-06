@@ -4,11 +4,9 @@ import {
 } from "@/lib/campionato";
 import CalendarView from "@/components/CalendarView";
 import RankingTable from "@/components/RankingTable";
+import TeamSearch from "@/components/TeamSearch";
 import { ExternalLink } from "lucide-react";
 
-// ⚠️ FIX: Forza il refresh dei dati ad ogni richiesta
-// Opzione 1: revalidate = 0 → sempre fresco (no cache)
-// Opzione 2: revalidate = 60 → ricarica ogni 60 secondi (ISR)
 export const revalidate = 0; // Disabilita il caching statico
 
 export default async function CampionatoPage() {
@@ -94,7 +92,18 @@ export default async function CampionatoPage() {
           <CalendarView events={allEvents} />
         </section>
 
-        {/* SEZIONE 3: LINK UTILI */}
+        {/* SEZIONE 3: CERCA SQUADRA */}
+        <section className="mt-12">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-2">Cerca Risultati</h2>
+            <p className="text-muted-foreground">
+              Cerca una squadra per vedere tutte le sue partite
+            </p>
+          </div>
+          <TeamSearch events={allEvents} />
+        </section>
+
+        {/* SEZIONE 4: LINK UTILI */}
         <section className="mt-12 pt-8 border-t">
           <h3 className="text-lg font-semibold mb-4">Link Utili</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

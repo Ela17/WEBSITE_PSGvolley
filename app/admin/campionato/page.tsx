@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { UISPSyncButton } from "@/components/UISPSyncButton";
 import {
   ArrowLeft,
   Trophy,
@@ -38,7 +39,7 @@ import {
 interface Match {
   id: string;
   numero_gara: string;
-  data: string;
+  data: string | null;
   ora: string | null;
   squadra_a: string;
   squadra_b: string;
@@ -169,8 +170,8 @@ export default function AdminCampionatoPage() {
                   palestra: data.match.palestra,
                   note: data.match.note,
                 }
-              : m
-          )
+              : m,
+          ),
         );
         setEditDetailsMatch(null);
       } else {
@@ -250,8 +251,8 @@ export default function AdminCampionatoPage() {
                   set_b_vinti: data.match.set_b_vinti,
                   punteggi_set: data.match.punteggi_set,
                 }
-              : m
-          )
+              : m,
+          ),
         );
         setEditMatch(null);
       } else {
@@ -266,8 +267,12 @@ export default function AdminCampionatoPage() {
   };
 
   // Formatta data
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "Da definire";
+
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Da definire";
+
     return date.toLocaleDateString("it-IT", {
       weekday: "short",
       day: "2-digit",
@@ -282,6 +287,9 @@ export default function AdminCampionatoPage() {
 
   // Determina se una partita è futura (basandosi sulla data)
   const isFutureMatch = (match: Match): boolean => {
+    // Se data non definita, considerala futura
+    if (!match.data) return true;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const matchDate = new Date(match.data);
@@ -301,7 +309,7 @@ export default function AdminCampionatoPage() {
       (m) =>
         m.numero_gara.toLowerCase().includes(query) ||
         m.squadra_a.toLowerCase().includes(query) ||
-        m.squadra_b.toLowerCase().includes(query)
+        m.squadra_b.toLowerCase().includes(query),
     );
   };
 
@@ -340,13 +348,22 @@ export default function AdminCampionatoPage() {
     // Partite giocate: hanno risultato E sono passate
     const played = matches.filter((m) => hasResult(m) && !isFutureMatch(m));
 
-    // Ordina: upcoming per data crescente, played per data decrescente
-    const sortedUpcoming = [...upcoming].sort(
-      (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
-    );
-    const sortedPlayed = [...played].sort(
-      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
-    );
+    // Ordina: upcoming per data crescente (quelle da definire in fondo), played per data decrescente
+    const sortedUpcoming = [...upcoming].sort((a, b) => {
+      // Partite senza data vanno in fondo
+      if (!a.data && !b.data) return 0;
+      if (!a.data) return 1;
+      if (!b.data) return -1;
+      return new Date(a.data).getTime() - new Date(b.data).getTime();
+    });
+
+    const sortedPlayed = [...played].sort((a, b) => {
+      // Partite senza data vanno in fondo
+      if (!a.data && !b.data) return 0;
+      if (!a.data) return 1;
+      if (!b.data) return -1;
+      return new Date(b.data).getTime() - new Date(a.data).getTime();
+    });
 
     return (
       <div className="space-y-6">
@@ -539,9 +556,12 @@ export default function AdminCampionatoPage() {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle>
-                Partite Campionato ({matches.length} totali)
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle>
+                  Partite Campionato ({matches.length} totali)
+                </CardTitle>
+                <UISPSyncButton onSyncComplete={fetchMatches} />
+              </div>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input

@@ -33,22 +33,25 @@ interface CalendarViewProps {
 
 export default function CalendarView({ events }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null
-  );
+  const [selectedEvents, setSelectedEvents] = useState<CalendarEvent[]>([]);
+  const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // SOLO partite del PSG
   const psgEvents = events.filter(
     (event) =>
       event.squadraA.includes("ASD Patr. San Giuseppe") ||
-      event.squadraB.includes("ASD Patr. San Giuseppe")
+      event.squadraB.includes("ASD Patr. San Giuseppe"),
   );
 
   // Crea mappa date -> eventi PSG
   const eventsByDate = new Map<string, CalendarEvent[]>();
   psgEvents.forEach((event) => {
+    if (!event.data) return;
+
     const date = parseItalianDate(event.data);
+    if (isNaN(date.getTime())) return;
+
     const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, []);
@@ -117,7 +120,8 @@ export default function CalendarView({ events }: CalendarViewProps) {
     const dayEvents = eventsByDate.get(dateKey) || [];
 
     if (dayEvents.length > 0) {
-      setSelectedEvent(dayEvents[0]);
+      setSelectedEvents(dayEvents);
+      setCurrentEventIndex(0);
       setDialogOpen(true);
     }
   };
@@ -144,12 +148,16 @@ export default function CalendarView({ events }: CalendarViewProps) {
   // Filtra eventi del mese corrente per la vista lista mobile
   const monthEvents = psgEvents
     .filter((event) => {
+      if (!event.data) return false; // Escludi eventi senza data
+
       const eventDate = parseItalianDate(event.data);
+      if (isNaN(eventDate.getTime())) return false; // Escludi date invalide
+
       return eventDate.getMonth() === month && eventDate.getFullYear() === year;
     })
     .sort((a, b) => {
-      const dateA = parseItalianDate(a.data);
-      const dateB = parseItalianDate(b.data);
+      const dateA = parseItalianDate(a.data!);
+      const dateB = parseItalianDate(b.data!);
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -186,7 +194,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
             ) : (
               monthEvents.map((event) => {
                 const opponent = event.squadraA.includes(
-                  "ASD Patr. San Giuseppe"
+                  "ASD Patr. San Giuseppe",
                 )
                   ? event.squadraB
                   : event.squadraA;
@@ -197,14 +205,15 @@ export default function CalendarView({ events }: CalendarViewProps) {
                   <button
                     key={event.id}
                     onClick={() => {
-                      setSelectedEvent(event);
+                      setSelectedEvents([event]);
+                      setCurrentEventIndex(0);
                       setDialogOpen(true);
                     }}
                     className={cn(
                       "w-full text-left p-4 rounded-lg border-2 transition-all",
                       "hover:shadow-md hover:border-primary/50",
                       isEventToday && "border-primary bg-primary/5",
-                      !isEventToday && "border-border"
+                      !isEventToday && "border-border",
                     )}
                   >
                     <div className="space-y-2">
@@ -300,7 +309,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                       today && "border-primary bg-primary/5",
                       hasEvents &&
                         "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20",
-                      !hasEvents && "border-border hover:bg-muted/50"
+                      !hasEvents && "border-border hover:bg-muted/50",
                     )}
                   >
                     {day && (
@@ -310,7 +319,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                           className={cn(
                             "text-sm font-semibold mb-1",
                             today && "text-primary",
-                            !today && "text-foreground"
+                            !today && "text-foreground",
                           )}
                         >
                           {day}
@@ -327,7 +336,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
 
                               // Determina avversario
                               const opponent = event.squadraA.includes(
-                                "ASD Patr. San Giuseppe"
+                                "ASD Patr. San Giuseppe",
                               )
                                 ? event.squadraB
                                 : event.squadraA;
@@ -376,150 +385,204 @@ export default function CalendarView({ events }: CalendarViewProps) {
       </Card>
 
       {/* Dialog dettagli partita */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        {selectedEvent && (
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Dettagli Partita</DialogTitle>
-            </DialogHeader>
+<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  {selectedEvents.length > 0 && (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="text-2xl flex items-center justify-between">
+          <span>Dettagli Partita</span>
+          {selectedEvents.length > 1 && (
+            <span className="text-sm font-normal text-muted-foreground">
+              {currentEventIndex + 1} / {selectedEvents.length}
+            </span>
+          )}
+        </DialogTitle>
+      </DialogHeader>
 
-            <div className="space-y-4">
-              {/* Badge categoria */}
-              <div>
-                <Badge
-                  variant={
-                    selectedEvent.categoria === "master" ? "master" : "open"
-                  }
-                >
-                  {getCategoriaLabel(selectedEvent.categoria)}
-                </Badge>
-              </div>
-
-              {/* Squadre */}
-              <div className="text-center py-4 bg-muted/50 rounded-lg">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-                  <span
-                    className={cn(
-                      "font-bold text-base sm:text-lg",
-                      selectedEvent.squadraA.includes(
-                        "ASD Patr. San Giuseppe"
-                      ) && "text-primary"
-                    )}
-                  >
-                    {selectedEvent.squadraA}
-                  </span>
-                  <span className="text-xl sm:text-2xl font-light text-muted-foreground">
-                    vs
-                  </span>
-                  <span
-                    className={cn(
-                      "font-bold text-base sm:text-lg",
-                      selectedEvent.squadraB.includes(
-                        "ASD Patr. San Giuseppe"
-                      ) && "text-primary"
-                    )}
-                  >
-                    {selectedEvent.squadraB}
-                  </span>
-                </div>
-
-                {selectedEvent.risultato && (
-                  <div className="mt-3 text-3xl font-bold">
-                    {selectedEvent.risultato.setA} -{" "}
-                    {selectedEvent.risultato.setB}
-                  </div>
+      {/* Navigazione carosello */}
+      {selectedEvents.length > 1 && (
+        <div className="flex items-center justify-between mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentEventIndex(Math.max(0, currentEventIndex - 1))}
+            disabled={currentEventIndex === 0}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Prec.
+          </Button>
+          
+          {/* Indicatori pallini */}
+          <div className="flex gap-1.5">
+            {selectedEvents.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentEventIndex(idx)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-colors",
+                  idx === currentEventIndex
+                    ? "bg-primary"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
                 )}
-              </div>
+              />
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentEventIndex(Math.min(selectedEvents.length - 1, currentEventIndex + 1))}
+            disabled={currentEventIndex === selectedEvents.length - 1}
+          >
+            Succ.
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      )}
 
-              {/* Info partita */}
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <div className="text-sm">
-                    <p className="text-muted-foreground">Data</p>
-                    <p className="font-semibold">
-                      {formatDateItalian(selectedEvent.data)}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedEvent.ora && (
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                    <div className="text-sm">
-                      <p className="text-muted-foreground">Orario</p>
-                      <p className="font-semibold">
-                        {formatTimeItalian(selectedEvent.ora)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedEvent.palestra && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                    <div className="text-sm flex-1">
-                      <p className="text-muted-foreground">Palestra</p>
-                      <a
-                        href={getGoogleMapsLink(selectedEvent.palestra)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-dotted transition-colors inline-flex items-center gap-1"
-                      >
-                        {selectedEvent.palestra}
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {selectedEvent.note && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
-                      Note
-                    </p>
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      {selectedEvent.note}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Punteggi set se disponibili */}
-              {selectedEvent.risultato &&
-                selectedEvent.risultato.punteggiSet.length > 0 && (
-                  <div className="border-t pt-4">
-                    <p className="text-sm font-semibold mb-2">Punteggi Set</p>
-                    <div className="space-y-2">
-                      {selectedEvent.risultato.punteggiSet.map((set, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Set {idx + 1}:
-                          </span>
-                          <span className="font-semibold">
-                            {set.ptsA} - {set.ptsB}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+      {/* Contenuto partita corrente */}
+      {(() => {
+        const selectedEvent = selectedEvents[currentEventIndex];
+        return (
+          <div className="space-y-4">
+            {/* Badge categoria */}
+            <div>
+              <Badge
+                variant={
+                  selectedEvent.categoria === "master" ? "master" : "open"
+                }
+              >
+                {getCategoriaLabel(selectedEvent.categoria)}
+              </Badge>
             </div>
-          </DialogContent>
-        )}
-      </Dialog>
+
+            {/* Squadre */}
+            <div className="text-center py-4 bg-muted/50 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                <span
+                  className={cn(
+                    "font-bold text-base sm:text-lg",
+                    selectedEvent.squadraA.includes(
+                      "ASD Patr. San Giuseppe"
+                    ) && "text-primary"
+                  )}
+                >
+                  {selectedEvent.squadraA}
+                </span>
+                <span className="text-xl sm:text-2xl font-light text-muted-foreground">
+                  vs
+                </span>
+                <span
+                  className={cn(
+                    "font-bold text-base sm:text-lg",
+                    selectedEvent.squadraB.includes(
+                      "ASD Patr. San Giuseppe"
+                    ) && "text-primary"
+                  )}
+                >
+                  {selectedEvent.squadraB}
+                </span>
+              </div>
+
+              {selectedEvent.risultato && (
+                <div className="mt-3 text-3xl font-bold">
+                  {selectedEvent.risultato.setA} -{" "}
+                  {selectedEvent.risultato.setB}
+                </div>
+              )}
+            </div>
+
+            {/* Info partita */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-start gap-3">
+                <Calendar className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Data</p>
+                  <p className="font-semibold">
+                    {formatDateItalian(selectedEvent.data)}
+                  </p>
+                </div>
+              </div>
+
+              {selectedEvent.ora && (
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Orario</p>
+                    <p className="font-semibold">
+                      {formatTimeItalian(selectedEvent.ora)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent.palestra && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                  <div className="text-sm flex-1">
+                    <p className="text-muted-foreground">Palestra</p>
+                    <a
+                      href={getGoogleMapsLink(selectedEvent.indirizzo_maps || selectedEvent.palestra)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-dotted transition-colors inline-flex items-center gap-1"
+                    >
+                      {selectedEvent.palestra}
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent.note && (
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                    Note
+                  </p>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    {selectedEvent.note}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Punteggi set se disponibili */}
+            {selectedEvent.risultato &&
+              selectedEvent.risultato.punteggiSet.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-2">Punteggi Set</p>
+                  <div className="space-y-2">
+                    {selectedEvent.risultato.punteggiSet.map((set, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Set {idx + 1}:
+                        </span>
+                        <span className="font-semibold">
+                          {set.ptsA} - {set.ptsB}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+          </div>
+        );
+      })()}
+    </DialogContent>
+  )}
+</Dialog>
     </div>
   );
 }

@@ -85,7 +85,7 @@ export default function NextMatchCard({
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <a
-                href={getGoogleMapsLink(match.palestra)}
+                href={getGoogleMapsLink(match.indirizzo_maps || match.palestra)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline decoration-dotted transition-colors"
