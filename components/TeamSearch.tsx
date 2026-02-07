@@ -1,128 +1,66 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  CalendarEvent,
-  formatDateItalian,
-  getCategoriaLabel,
-} from "@/lib/campionato-types";
+import { useState } from "react";
+import { CalendarEvent, parseItalianDate, getCategoriaLabel, formatDateItalian, formatTimeItalian } from "@/lib/campionato-types";
+import { getGoogleMapsLink } from "@/lib/calendar-utils";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Search, Trophy, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Search, MapPin, Clock, Calendar, Trophy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TeamSearchProps {
   events: CalendarEvent[];
 }
 
+type CategoriaFilter = "all" | "master" | "open";
+
 export default function TeamSearch({ events }: TeamSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoriaFilter, setCategoriaFilter] = useState<CategoriaFilter>("all");
 
-  // Filtra partite per squadra cercata
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) return null;
-
+  // Filtra per nome squadra
+  const filterByTeam = (eventList: CalendarEvent[]): CalendarEvent[] => {
+    if (!searchQuery.trim()) return eventList;
     const query = searchQuery.toLowerCase().trim();
-
-    const matches = events.filter(
-      (e) =>
-        e.squadraA.toLowerCase().includes(query) ||
-        e.squadraB.toLowerCase().includes(query),
+    return eventList.filter(
+      (event) =>
+        event.squadraA.toLowerCase().includes(query) ||
+        event.squadraB.toLowerCase().includes(query)
     );
+  };
 
-    // Separa giocate e da giocare
-    const played = matches.filter(
-      (m) =>
-        m.risultato !== null &&
-        m.risultato !== undefined &&
-        m.risultato.setA !== null &&
-        m.risultato.setA !== undefined,
-    );
-    const upcoming = matches.filter(
-      (m) =>
-        !m.risultato ||
-        m.risultato.setA === null ||
-        m.risultato.setA === undefined,
-    );
+  // Filtra per categoria
+  const filterByCategoria = (eventList: CalendarEvent[]): CalendarEvent[] => {
+    if (categoriaFilter === "all") return eventList;
+    return eventList.filter((event) => event.categoria === categoriaFilter);
+  };
 
-    // Ordina per data
-    const sortByDate = (a: CalendarEvent, b: CalendarEvent) => {
-      if (!a.data && !b.data) return 0;
-      if (!a.data) return 1;
-      if (!b.data) return -1;
-      return new Date(b.data).getTime() - new Date(a.data).getTime();
-    };
+  // Applica entrambi i filtri SOLO se c'è una ricerca attiva
+  const hasSearch = searchQuery.trim().length > 0;
+  const filteredEvents = hasSearch ? filterByCategoria(filterByTeam(events)) : [];
 
-    played.sort(sortByDate);
-    upcoming.sort((a, b) => {
-      if (!a.data && !b.data) return 0;
-      if (!a.data) return 1;
-      if (!b.data) return -1;
-      return new Date(a.data).getTime() - new Date(b.data).getTime();
-    });
+  // Ordina per data (più recenti prima)
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    if (!a.data || !b.data) return 0;
+    const dateA = parseItalianDate(a.data);
+    const dateB = parseItalianDate(b.data);
+    return dateB.getTime() - dateA.getTime();
+  });
 
-    // Calcola statistiche
-    let vittorie = 0;
-    let sconfitte = 0;
-    let setVinti = 0;
-    let setPerse = 0;
-
-    played.forEach((m) => {
-      if (!m.risultato) return;
-
-      const isSquadraA = m.squadraA.toLowerCase().includes(query);
-      const setA = m.risultato.setA;
-      const setB = m.risultato.setB;
-
-      if (isSquadraA) {
-        setVinti += setA;
-        setPerse += setB;
-        if (setA > setB) vittorie++;
-        else sconfitte++;
-      } else {
-        setVinti += setB;
-        setPerse += setA;
-        if (setB > setA) vittorie++;
-        else sconfitte++;
-      }
-    });
-
-    return {
-      played,
-      upcoming,
-      stats: {
-        vittorie,
-        sconfitte,
-        setVinti,
-        setPerse,
-      },
-      teamName: matches[0]?.squadraA.toLowerCase().includes(query)
-        ? matches[0]?.squadraA
-        : matches[0]?.squadraB || searchQuery,
-    };
-  }, [events, searchQuery]);
+  // Verifica se ha risultato
+  const hasResult = (event: CalendarEvent) => event.risultato !== undefined;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Cerca Squadra</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Barra di ricerca */}
-        <div className="relative">
+    <div className="space-y-4">
+      {/* Filtri */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Input ricerca */}
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Es. Kolbe, Sinapsi, Frassati..."
+            placeholder="Cerca squadra..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -139,238 +77,171 @@ export default function TeamSearch({ events }: TeamSearchProps) {
           )}
         </div>
 
-        {/* Messaggio se query troppo corta */}
-        {searchQuery.length > 0 && searchQuery.length < 2 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Inserisci almeno 2 caratteri per cercare
-          </p>
+        {/* Toggle categoria - visibile solo con ricerca attiva */}
+        {hasSearch && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant={categoriaFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaFilter("all")}
+              className="min-w-[80px]"
+            >
+              Tutte
+            </Button>
+            <Button
+              variant={categoriaFilter === "master" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaFilter("master")}
+              className="min-w-[80px]"
+            >
+              4+2
+            </Button>
+            <Button
+              variant={categoriaFilter === "open" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaFilter("open")}
+              className="min-w-[80px]"
+            >
+              3×3
+            </Button>
+          </div>
         )}
+      </div>
 
-        {/* Nessun risultato */}
-        {searchResults &&
-          searchResults.played.length === 0 &&
-          searchResults.upcoming.length === 0 && (
-            <div className="text-center py-8">
-              <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">
-                Nessuna squadra trovata per "{searchQuery}"
-              </p>
-            </div>
-          )}
+      {/* Risultati */}
+      {!hasSearch ? null : sortedEvents.length === 0 ? (
+        <div className="text-center py-12">
+          <Search className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+          <p className="text-muted-foreground">
+            Nessuna partita trovata per "{searchQuery}"
+            {categoriaFilter !== "all" &&
+              ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
+          </p>
+          <div className="flex gap-2 justify-center mt-4">
+            <Button variant="link" size="sm" onClick={() => setSearchQuery("")}>
+              Cancella ricerca
+            </Button>
+            {categoriaFilter !== "all" && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setCategoriaFilter("all")}
+              >
+                Mostra tutte le categorie
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {sortedEvents.length} partite trovate
+            {categoriaFilter !== "all" &&
+              ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
+          </p>
+          {sortedEvents.map((event) => (
+            <Card key={event.id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  {/* Badge categoria */}
+                  <Badge
+                    variant={event.categoria === "master" ? "default" : "secondary"}
+                    className={cn(
+                      "shrink-0",
+                      event.categoria === "master"
+                        ? "bg-blue-500 hover:bg-blue-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    )}
+                  >
+                    <Trophy className="w-3 h-3 mr-1" />
+                    {getCategoriaLabel(event.categoria)}
+                  </Badge>
 
-        {/* Risultati */}
-        {searchResults &&
-          (searchResults.played.length > 0 ||
-            searchResults.upcoming.length > 0) && (
-            <div className="space-y-6">
-              {/* Header con nome squadra e statistiche */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h3 className="font-bold text-lg mb-3">
-                  {searchResults.teamName.replace("ASD ", "")}
-                </h3>
+                  {/* Info partita */}
+                  <div className="flex-1 space-y-1">
+                    <div className="font-semibold text-sm sm:text-base">
+                      {event.squadraA} <span className="text-muted-foreground">vs</span>{" "}
+                      {event.squadraB}
+                    </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="text-center p-2 bg-background rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">
-                      {searchResults.stats.vittorie}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Vittorie</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDateItalian(event.data)}
+                      </span>
+                      {event.ora && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatTimeItalian(event.ora)}
+                        </span>
+                      )}
+                      {event.palestra && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {event.palestra}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-center p-2 bg-background rounded-lg">
-                    <p className="text-2xl font-bold text-red-600">
-                      {searchResults.stats.sconfitte}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Sconfitte</p>
-                  </div>
-                  <div className="text-center p-2 bg-background rounded-lg">
-                    <p className="text-2xl font-bold">
-                      {searchResults.stats.setVinti}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Set vinti</p>
-                  </div>
-                  <div className="text-center p-2 bg-background rounded-lg">
-                    <p className="text-2xl font-bold">
-                      {searchResults.stats.setPerse}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Set persi</p>
-                  </div>
+
+                  {/* Risultato */}
+                  {hasResult(event) ? (
+                    <div className="shrink-0">
+                      <div className="flex items-center gap-2 text-lg font-bold">
+                        <span
+                          className={cn(
+                            event.risultato!.setA > event.risultato!.setB
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          )}
+                        >
+                          {event.risultato!.setA}
+                        </span>
+                        <span className="text-muted-foreground">-</span>
+                        <span
+                          className={cn(
+                            event.risultato!.setB > event.risultato!.setA
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          )}
+                        >
+                          {event.risultato!.setB}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground text-center mt-1">
+                        (
+                        {event.risultato!.punteggiSet
+                          .map((s) => `${s.ptsA}-${s.ptsB}`)
+                          .join(", ")}
+                        )
+                      </div>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="shrink-0">
+                      Da giocare
+                    </Badge>
+                  )}
                 </div>
-              </div>
 
-              {/* Partite giocate */}
-              {searchResults.played.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-green-600" />
-                    Partite giocate ({searchResults.played.length})
-                  </h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Partita</TableHead>
-                          <TableHead className="text-center">
-                            Risultato
-                          </TableHead>
-                          <TableHead className="text-right">Cat.</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {searchResults.played.map((match) => {
-                          const isSquadraA = match.squadraA
-                            .toLowerCase()
-                            .includes(searchQuery.toLowerCase());
-                          const hasWon = match.risultato
-                            ? isSquadraA
-                              ? match.risultato.setA > match.risultato.setB
-                              : match.risultato.setB > match.risultato.setA
-                            : false;
-
-                          return (
-                            <TableRow key={match.id}>
-                              <TableCell className="text-sm">
-                                {match.data
-                                  ? formatDateItalian(match.data)
-                                  : "Da definire"}
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  className={cn(
-                                    "font-medium",
-                                    isSquadraA && "text-primary",
-                                  )}
-                                >
-                                  {match.squadraA.replace("ASD ", "")}
-                                </span>
-                                <span className="text-muted-foreground mx-2">
-                                  vs
-                                </span>
-                                <span
-                                  className={cn(
-                                    "font-medium",
-                                    !isSquadraA && "text-primary",
-                                  )}
-                                >
-                                  {match.squadraB.replace("ASD ", "")}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <span
-                                  className={cn(
-                                    "font-bold text-lg",
-                                    hasWon ? "text-green-600" : "text-red-600",
-                                  )}
-                                >
-                                  {match.risultato?.setA} -{" "}
-                                  {match.risultato?.setB}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Badge
-                                  variant={
-                                    match.categoria === "master"
-                                      ? "master"
-                                      : "open"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {getCategoriaLabel(match.categoria)}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                {/* Link Google Maps */}
+                {event.indirizzo_maps && (
+                  <div className="mt-3 pt-3 border-t">
+                    <a
+                      href={getGoogleMapsLink(event.indirizzo_maps)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      Indicazioni stradali
+                    </a>
                   </div>
-                </div>
-              )}
-
-              {/* Partite da giocare */}
-              {searchResults.upcoming.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-orange-500" />
-                    Da giocare ({searchResults.upcoming.length})
-                  </h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Partita</TableHead>
-                          <TableHead className="text-right">Cat.</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {searchResults.upcoming.slice(0, 10).map((match) => {
-                          const isSquadraA = match.squadraA
-                            .toLowerCase()
-                            .includes(searchQuery.toLowerCase());
-
-                          return (
-                            <TableRow key={match.id}>
-                              <TableCell className="text-sm">
-                                {match.data
-                                  ? formatDateItalian(match.data)
-                                  : "Da definire"}
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  className={cn(
-                                    "font-medium",
-                                    isSquadraA && "text-primary",
-                                  )}
-                                >
-                                  {match.squadraA.replace("ASD ", "")}
-                                </span>
-                                <span className="text-muted-foreground mx-2">
-                                  vs
-                                </span>
-                                <span
-                                  className={cn(
-                                    "font-medium",
-                                    !isSquadraA && "text-primary",
-                                  )}
-                                >
-                                  {match.squadraB.replace("ASD ", "")}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Badge
-                                  variant={
-                                    match.categoria === "master"
-                                      ? "master"
-                                      : "open"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {getCategoriaLabel(match.categoria)}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        {searchResults.upcoming.length > 10 && (
-                          <TableRow>
-                            <TableCell
-                              colSpan={3}
-                              className="text-center text-muted-foreground text-sm"
-                            >
-                              ... e altre {searchResults.upcoming.length - 10}{" "}
-                              partite
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-      </CardContent>
-    </Card>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

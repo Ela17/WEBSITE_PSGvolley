@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import GalleryUploader from "@/components/GalleryUploader";
+import WysiwygEditor from "@/components/WysiwygEditor";
 
 export default function NuovoEventoPage() {
   const router = useRouter();
@@ -348,17 +349,17 @@ export default function NuovoEventoPage() {
               </div>
 
               <div>
-                <Label htmlFor="content">Contenuto completo (HTML)</Label>
-                <Textarea
-                  id="content"
-                  value={form.content}
-                  onChange={(e) =>
-                    setForm({ ...form, content: e.target.value })
-                  }
-                  placeholder="<h2>Programma</h2><ul><li>9:00 Ritrovo</li><li>10:00 Inizio partite</li></ul>"
-                  rows={15}
-                  className="font-mono text-sm"
+                <Label>Contenuto completo</Label>
+                <WysiwygEditor
+                  content={form.content}
+                  onChange={(html) => setForm({ ...form, content: html })}
+                  placeholder="Scrivi il contenuto dell'evento..."
+                  minHeight="400px"
                 />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Usa l'editor per formattare il contenuto. Puoi aggiungere
+                  titoli, liste, link, immagini e tabelle.
+                </p>
               </div>
             </CardContent>
           </Card>
