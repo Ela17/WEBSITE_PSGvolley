@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarEvent, parseItalianDate, getCategoriaLabel, formatDateItalian, formatTimeItalian } from "@/lib/campionato-types";
-import { getGoogleMapsLink } from "@/lib/calendar-utils";
+import { CalendarEvent, parseItalianDate, getCategoriaLabel, formatDateItalian } from "@/lib/campionato-types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Clock, Calendar, Trophy, X } from "lucide-react";
+import { Search, Calendar, Trophy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TeamSearchProps {
@@ -41,13 +40,27 @@ export default function TeamSearch({ events }: TeamSearchProps) {
   const hasSearch = searchQuery.trim().length > 0;
   const filteredEvents = hasSearch ? filterByCategoria(filterByTeam(events)) : [];
 
-  // Ordina per data (più recenti prima)
-  const sortedEvents = [...filteredEvents].sort((a, b) => {
-    if (!a.data || !b.data) return 0;
-    const dateA = parseItalianDate(a.data);
-    const dateB = parseItalianDate(b.data);
-    return dateB.getTime() - dateA.getTime();
-  });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Separa partite passate e future
+  const pastEvents = filteredEvents
+    .filter((e) => {
+      if (!e.data) return false;
+      const d = parseItalianDate(e.data);
+      return d < today;
+    })
+    .sort((a, b) => {
+      const dateA = parseItalianDate(a.data);
+      const dateB = parseItalianDate(b.data);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+  const futureEventsCount = filteredEvents.filter((e) => {
+    if (!e.data) return false;
+    const d = parseItalianDate(e.data);
+    return d >= today;
+  }).length;
 
   // Verifica se ha risultato
   const hasResult = (event: CalendarEvent) => event.risultato !== undefined;
@@ -109,7 +122,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
       </div>
 
       {/* Risultati */}
-      {!hasSearch ? null : sortedEvents.length === 0 ? (
+      {!hasSearch ? null : pastEvents.length === 0 && futureEventsCount === 0 ? (
         <div className="text-center py-12">
           <Search className="w-12 h-12 mx-auto text-gray-300 mb-4" />
           <p className="text-muted-foreground">
@@ -134,12 +147,19 @@ export default function TeamSearch({ events }: TeamSearchProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {sortedEvents.length} partite trovate
-            {categoriaFilter !== "all" &&
-              ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
-          </p>
-          {sortedEvents.map((event) => (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              {pastEvents.length} {pastEvents.length === 1 ? "partita giocata" : "partite giocate"}
+              {categoriaFilter !== "all" &&
+                ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
+            </p>
+            {futureEventsCount > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {futureEventsCount} {futureEventsCount === 1 ? "partita" : "partite"} ancora da giocare
+              </Badge>
+            )}
+          </div>
+          {pastEvents.map((event) => (
             <Card key={event.id} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -169,18 +189,6 @@ export default function TeamSearch({ events }: TeamSearchProps) {
                         <Calendar className="w-3 h-3" />
                         {formatDateItalian(event.data)}
                       </span>
-                      {event.ora && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatTimeItalian(event.ora)}
-                        </span>
-                      )}
-                      {event.palestra && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {event.palestra}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -223,20 +231,6 @@ export default function TeamSearch({ events }: TeamSearchProps) {
                   )}
                 </div>
 
-                {/* Link Google Maps */}
-                {event.indirizzo_maps && (
-                  <div className="mt-3 pt-3 border-t">
-                    <a
-                      href={getGoogleMapsLink(event.indirizzo_maps)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
-                    >
-                      <MapPin className="w-3 h-3" />
-                      Indicazioni stradali
-                    </a>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
