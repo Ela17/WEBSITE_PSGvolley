@@ -26,9 +26,13 @@ export interface Ranking {
   squadra: string;
   punti: number;
   partiteGiocate: number;
+  partiteVinte: number;
   setVinti: number;
   setPersi: number;
   quozienteSet: number;
+  puntiVinti: number;
+  puntiPersi: number;
+  quozientePunti: number;
 }
 
 export interface CalendarEvent {

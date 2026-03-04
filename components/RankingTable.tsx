@@ -56,13 +56,14 @@ export default function RankingTable({
                 <TableHead>Squadra</TableHead>
                 <TableHead className="text-center w-12">Pt</TableHead>
                 <TableHead className="text-center w-12">PG</TableHead>
+                <TableHead className="text-center">PV</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {ranking.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center text-muted-foreground"
                   >
                     Nessun dato disponibile
@@ -77,7 +78,7 @@ export default function RankingTable({
                       key={team.squadra}
                       className={cn(
                         isHighlighted &&
-                          "bg-blue-50 dark:bg-blue-950/30 font-medium"
+                          "bg-blue-50 dark:bg-blue-950/30 font-medium",
                       )}
                     >
                       <TableCell className="font-medium text-muted-foreground text-sm">
@@ -99,6 +100,7 @@ export default function RankingTable({
                       <TableCell className="text-center text-sm text-muted-foreground">
                         {team.partiteGiocate}
                       </TableCell>
+                      <TableCell className="text-center">{team.partiteVinte}</TableCell>
                     </TableRow>
                   );
                 })
@@ -107,7 +109,7 @@ export default function RankingTable({
             <TableCaption>
               <div className="text-xs text-left space-y-1">
                 <p className="font-semibold">Legenda:</p>
-                <p>Pt = Punti, PG = Partite Giocate</p>
+                <p>Pt = Punti, PG = Partite Giocate, PV = Partite Vinte</p>
                 <p className="text-muted-foreground italic">
                   Visualizza su desktop per tutte le statistiche
                 </p>
@@ -125,16 +127,20 @@ export default function RankingTable({
                 <TableHead>Squadra</TableHead>
                 <TableHead className="text-center">Pt</TableHead>
                 <TableHead className="text-center">PG</TableHead>
+                <TableHead className="text-center">PV</TableHead>
                 <TableHead className="text-center">SV</TableHead>
                 <TableHead className="text-center">SP</TableHead>
                 <TableHead className="text-center">QS</TableHead>
+                <TableHead className="text-center">PF</TableHead>
+                <TableHead className="text-center">PS</TableHead>
+                <TableHead className="text-center">QP</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {ranking.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={10}
                     className="text-center text-muted-foreground"
                   >
                     Nessun dato disponibile
@@ -149,7 +155,7 @@ export default function RankingTable({
                       key={team.squadra}
                       className={cn(
                         isHighlighted &&
-                          "bg-blue-50 dark:bg-blue-950/30 font-medium"
+                          "bg-blue-50 dark:bg-blue-950/30 font-medium",
                       )}
                     >
                       <TableCell className="font-medium text-muted-foreground">
@@ -170,6 +176,9 @@ export default function RankingTable({
                         {team.partiteGiocate}
                       </TableCell>
                       <TableCell className="text-center">
+                        {team.partiteVinte}
+                      </TableCell>
+                      <TableCell className="text-center">
                         {team.setVinti}
                       </TableCell>
                       <TableCell className="text-center">
@@ -177,6 +186,15 @@ export default function RankingTable({
                       </TableCell>
                       <TableCell className="text-center">
                         {team.quozienteSet.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.puntiVinti}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.puntiPersi}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {team.quozientePunti.toFixed(3)}
                       </TableCell>
                     </TableRow>
                   );
@@ -187,8 +205,9 @@ export default function RankingTable({
               <div className="text-xs text-left space-y-1">
                 <p className="font-semibold">Legenda:</p>
                 <p>
-                  Pt = Punti, PG = Partite Giocate, SV = Set Vinti, SP = Set
-                  Persi, QS = Quoziente Set
+                  Pt = Punti, PG = Partite Giocate, PV = Partite Vinte, SV = Set Vinti, SP = Set
+                  Persi, QS = Quoziente Set, PF = Punti Fatti, PS = Punti Subiti,
+                  QP = Quoziente Punti
                 </p>
               </div>
             </TableCaption>
