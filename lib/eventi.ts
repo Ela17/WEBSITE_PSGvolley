@@ -1,6 +1,5 @@
 import { supabase, DBEvento } from "./supabase";
 
-// Interfacce compatibili con il codice esistente
 export interface Evento {
   slug: string;
   title: string;
@@ -132,6 +131,44 @@ export async function getEventoBySlug(slug: string): Promise<Evento | null> {
 
   // Il contenuto è già in HTML nel database
   return dbToEvento(data, true);
+}
+
+// Ottiene il prossimo evento futuro (il primo in ordine cronologico)
+export async function getNextEvento(): Promise<EventoPreview | null> {
+  const today = getTodayString();
+
+  const { data, error } = await supabase
+    .from("eventi")
+    .select("*")
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .limit(1);
+
+  if (error || !data || data.length === 0) return null;
+
+  const e = data[0];
+  if (!e.slug || e.slug === "undefined" || e.slug === "null") return null;
+
+  return dbToPreview(e);
+}
+
+// Ottiene l'ultimo evento passato (il più recente)
+export async function getLastEventoPassato(): Promise<EventoPreview | null> {
+  const today = getTodayString();
+
+  const { data, error } = await supabase
+    .from("eventi")
+    .select("*")
+    .lt("date", today)
+    .order("date", { ascending: false })
+    .limit(1);
+
+  if (error || !data || data.length === 0) return null;
+
+  const e = data[0];
+  if (!e.slug || e.slug === "undefined" || e.slug === "null") return null;
+
+  return dbToPreview(e);
 }
 
 // Ottiene tutti gli eventi (futuri + passati)
