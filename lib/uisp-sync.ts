@@ -219,17 +219,35 @@ function cleanPalestra(raw: string | null | undefined): string | null {
     [/\bC\.se\b/gi, "Canavese"],
   ];
 
-  // Mappa sigle città → nome completo
+  // Mappa sigle provincia → nome completo (fallback quando la città non è in whitelist)
   const sigleCitta: Record<string, string> = {
     TO: "Torino",
     MI: "Milano",
     CN: "Cuneo",
     AT: "Asti",
     AL: "Alessandria",
-    NO: "Novara",
     VC: "Vercelli",
     BI: "Biella",
   };
+
+  // Whitelist città note nei campionati UISP Piemonte.
+  // Estendere man mano che compaiono nuove sedi.
+  // NOTA: l'ordine conta — le voci più lunghe/specifiche vanno prima per evitare match parziali.
+  const cittaWhitelist: string[] = [
+    "Borgofranco d'Ivrea",
+    "San Benigno Canavese",
+    "Castagnole Piemonte",
+    "Vauda Canavese",
+    "Moncalieri",
+    "Collegno",
+    "Givoletto",
+    "Caselette",
+    "Volpiano",
+    "Santena",
+    "Feletto",
+    "Torino",
+    // Aggiungere altre città UISP qui
+  ];
 
   // Pattern che indicano l'inizio di un indirizzo
   const patternIndirizzo =
@@ -238,19 +256,28 @@ function cleanPalestra(raw: string | null | undefined): string | null {
   try {
     let text = original;
 
-    // 0. Estrai la città PRIMA di modificare il testo
+    // 0. Estrai la città PRIMA di modificare il testo.
+    //    Espande le abbreviazioni su una copia temporanea così "Vauda C.se" → "Vauda Canavese".
     let cittaTrovata = "";
-    for (const [sigla, nome] of Object.entries(sigleCitta)) {
-      const regex = new RegExp(`\\b${sigla}\\b`, "g");
-      if (regex.test(text)) {
-        cittaTrovata = nome;
+    const textExpanded = abbreviazioni.reduce(
+      (t, [re, rep]) => t.replace(re, rep),
+      text,
+    );
+
+    // 0a. Whitelist città note (ricerca ovunque nel testo, anche prima dell'indirizzo).
+    //     Risolve casi come "Santena", "Vauda Canavese", "Castagnole Piemonte", ecc.
+    for (const città of cittaWhitelist) {
+      const escaped = città.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`\\b${escaped}\\b`, "i").test(textExpanded)) {
+        cittaTrovata = città;
         break;
       }
     }
-    // Cerca anche nomi città completi
+
+    // 0b. Fallback: sigle provincia (es. "TO", "MI") — meno preciso
     if (!cittaTrovata) {
-      for (const nome of Object.values(sigleCitta)) {
-        if (text.toLowerCase().includes(nome.toLowerCase())) {
+      for (const [sigla, nome] of Object.entries(sigleCitta)) {
+        if (new RegExp(`\\b${sigla}\\b`).test(text)) {
           cittaTrovata = nome;
           break;
         }
@@ -304,9 +331,11 @@ function cleanPalestra(raw: string | null | undefined): string | null {
 
     // 7. Pulizia finale
     text = text
-      .replace(/,\s*(\d)/g, " $1")
+      .replace(/,\s*(\d)/g, " $1")   // virgola prima di cifra → spazio
+      .replace(/,\s*,/g, ",")        // doppia virgola → singola
       .replace(/\s+/g, " ")
       .replace(/\s*[-–]\s*$/, "")
+      .replace(/[.,\s]+$/, "")       // trailing virgola/punto/spazio
       .trim();
 
     // 8. Aggiungi città se trovata e non già presente

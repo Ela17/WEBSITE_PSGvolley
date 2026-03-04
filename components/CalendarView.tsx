@@ -8,14 +8,21 @@ import {
   formatDateItalian,
   formatTimeItalian,
 } from "@/lib/campionato-types";
-import { getGoogleMapsLink } from "@/lib/calendar-utils";
+import { getGoogleMapsLink, generateICS, downloadICS, getGoogleCalendarLink } from "@/lib/calendar-utils";
 import {
   ChevronLeft,
   ChevronRight,
   Clock,
   MapPin,
   Calendar,
+  CalendarPlus,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,6 +105,30 @@ export default function CalendarView({ events }: CalendarViewProps) {
     setCurrentDate(new Date());
   };
 
+  // Export .ics
+  const handleExport = (categoria: "all" | "master" | "open") => {
+    const filtered =
+      categoria === "all"
+        ? psgEvents
+        : psgEvents.filter((e) => e.categoria === categoria);
+
+    const label =
+      categoria === "all"
+        ? "PSG Volley - Tutte le Partite"
+        : categoria === "master"
+          ? "PSG Volley - Master 4+2"
+          : "PSG Volley - Open 3×3";
+    const filename =
+      categoria === "all"
+        ? "psg-campionato.ics"
+        : categoria === "master"
+          ? "psg-master.ics"
+          : "psg-open.ics";
+
+    const ics = generateICS(filtered, label);
+    downloadICS(ics, filename);
+  };
+
   // Genera array di giorni (inclusi padding)
   const calendarDays = [];
 
@@ -170,6 +201,25 @@ export default function CalendarView({ events }: CalendarViewProps) {
               {monthNames[month]} {year}
             </CardTitle>
             <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CalendarPlus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Esporta</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("all")}>
+                    Tutte le partite PSG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("master")}>
+                    Solo Master (4+2)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("open")}>
+                    Solo Open (3×3)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="outline" size="sm" onClick={goToToday}>
                 Oggi
               </Button>
@@ -557,6 +607,17 @@ export default function CalendarView({ events }: CalendarViewProps) {
                 </div>
               )}
             </div>
+
+            {/* Aggiungi a Google Calendar */}
+            <a
+              href={getGoogleCalendarLink(selectedEvent)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors"
+            >
+              <CalendarPlus className="w-4 h-4" />
+              Aggiungi a Google Calendar
+            </a>
 
             {/* Punteggi set se disponibili */}
             {selectedEvent.risultato &&
