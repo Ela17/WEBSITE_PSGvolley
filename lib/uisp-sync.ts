@@ -24,10 +24,10 @@ const UISP_SHEETS = {
     maxNumeroGara: null, // Nessun limite
   },
   open: {
-    url: "https://docs.google.com/spreadsheets/d/17hDPCNtiHUIJ-zQ4FyDCoJFfjy9j5U8g/export?format=csv&gid=792185880",
+    url: "https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/export?format=csv&gid=190893738",
     categoria: "open" as const,
-    categoryIdentifier: "OPMSB",
-    maxNumeroGara: 742191, // Fino alla 13^ giornata
+    categoryIdentifier: "CPA OPMS",
+    maxNumeroGara: null,
   },
 };
 
@@ -100,8 +100,7 @@ function parseUISPDate(dateStr: string | undefined): string | null {
   const cleaned = dateStr.trim();
 
   // Rimuovi prefisso giorno settimana (es: "mer ", "gio ", "sab ")
-  const withoutDay = cleaned.replace(/^[a-z]{3}\s+/i, "").trim();
-
+  const withoutDay = cleaned.replace(/^[a-z]{3}[\s\/]+/i, "").trim();
   // Rimuovi spazi attorno agli slash (es: "26 /03/ 26" → "26/03/26")
   const normalized = withoutDay.replace(/\s*\/\s*/g, "/");
 
@@ -240,6 +239,7 @@ function cleanPalestra(raw: string | null | undefined): string | null {
     "Vauda Canavese",
     "Moncalieri",
     "Collegno",
+    "Chieri",
     "Givoletto",
     "Caselette",
     "Volpiano",
@@ -331,11 +331,11 @@ function cleanPalestra(raw: string | null | undefined): string | null {
 
     // 7. Pulizia finale
     text = text
-      .replace(/,\s*(\d)/g, " $1")   // virgola prima di cifra → spazio
-      .replace(/,\s*,/g, ",")        // doppia virgola → singola
+      .replace(/,\s*(\d)/g, " $1") // virgola prima di cifra → spazio
+      .replace(/,\s*,/g, ",") // doppia virgola → singola
       .replace(/\s+/g, " ")
       .replace(/\s*[-–]\s*$/, "")
-      .replace(/[.,\s]+$/, "")       // trailing virgola/punto/spazio
+      .replace(/[.,\s]+$/, "") // trailing virgola/punto/spazio
       .trim();
 
     // 8. Aggiungi città se trovata e non già presente

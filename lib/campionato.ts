@@ -277,29 +277,35 @@ export function getAllCalendarEvents(): CalendarEvent[] {
 
 /**
  * Calcola classifica dal database
+ * @param fase - solo per open: 'gironi' (742xxx) o 'coppa' (743xxx+). Ometti per tutte.
  */
 export async function calculateRankingAsync(
   categoria: "master" | "open",
+  fase?: "gironi" | "coppa",
 ): Promise<Ranking[]> {
-  const { data: matches, error } = await supabase
-    .from("matches")
-    .select("*")
-    .eq("categoria", categoria);
+  let query = supabase.from("matches").select("*").eq("categoria", categoria);
+
+  if (categoria === "open" && fase === "gironi") {
+    query = query.lt("numero_gara", "743000");
+  } else if (categoria === "open" && fase === "coppa") {
+    query = query.gte("numero_gara", "743000");
+  }
+
+  const { data: matches, error } = await query;
 
   if (error) {
-    console.error(`Errore calculateRankingAsync(${categoria}):`, error);
+    console.error(`Errore calculateRankingAsync(${categoria}, ${fase}):`, error);
     return [];
   }
 
-  // Usa la stessa logica del ranking originale
   const matchResults = (matches || []).map(dbToMatchResult);
-  return calculateRanking(matchResults);
+  return calculateRanking(matchResults, fase === "coppa");
 }
 
 /**
  * Calcola classifica (versione originale, funziona con MatchResult[])
  */
-export function calculateRanking(matches: MatchResult[]): Ranking[] {
+export function calculateRanking(matches: MatchResult[], includeEmpty = false): Ranking[] {
   const rankingMap = new Map<string, Ranking>();
   const allTeams = new Set<string>();
 
@@ -407,7 +413,7 @@ export function calculateRanking(matches: MatchResult[]): Ranking[] {
           ? team.puntiVinti
           : team.puntiVinti / team.puntiPersi,
     }))
-    .filter((team) => team.partiteGiocate > 0)
+    .filter((team) => includeEmpty || team.partiteGiocate > 0)
     .sort((a, b) => {
       if (b.punti !== a.punti) return b.punti - a.punti;
       if (b.quozienteSet !== a.quozienteSet)

@@ -343,10 +343,10 @@ export default function AdminCampionatoPage() {
       );
     }
 
-    // Partite da giocare: future O senza risultato
-    const upcoming = matches.filter((m) => !hasResult(m) || isFutureMatch(m));
-    // Partite giocate: hanno risultato E sono passate
-    const played = matches.filter((m) => hasResult(m) && !isFutureMatch(m));
+    // Partite da giocare: senza risultato (la data è irrilevante - anche tavolino senza data ha risultato)
+    const upcoming = matches.filter((m) => !hasResult(m));
+    // Partite giocate: hanno risultato (anche a tavolino senza data)
+    const played = matches.filter((m) => hasResult(m));
 
     // Ordina: upcoming per data crescente (quelle da definire in fondo), played per data decrescente
     const sortedUpcoming = [...upcoming].sort((a, b) => {

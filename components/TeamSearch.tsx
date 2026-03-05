@@ -44,19 +44,22 @@ export default function TeamSearch({ events }: TeamSearchProps) {
   today.setHours(0, 0, 0, 0);
 
   // Separa partite passate e future
+  // Una partita è "giocata" se ha data passata OPPURE ha un risultato (es. vittoria a tavolino senza data)
   const pastEvents = filteredEvents
     .filter((e) => {
+      if (e.risultato !== undefined) return true; // ha risultato = giocata
       if (!e.data) return false;
       const d = parseItalianDate(e.data);
       return d < today;
     })
     .sort((a, b) => {
-      const dateA = parseItalianDate(a.data);
-      const dateB = parseItalianDate(b.data);
+      const dateA = a.data ? parseItalianDate(a.data) : new Date(0);
+      const dateB = b.data ? parseItalianDate(b.data) : new Date(0);
       return dateB.getTime() - dateA.getTime();
     });
 
   const futureEventsCount = filteredEvents.filter((e) => {
+    if (e.risultato !== undefined) return false; // ha risultato = già giocata
     if (!e.data) return false;
     const d = parseItalianDate(e.data);
     return d >= today;
