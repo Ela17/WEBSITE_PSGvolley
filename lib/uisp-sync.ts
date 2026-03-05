@@ -202,6 +202,15 @@ function cleanPalestra(raw: string | null | undefined): string | null {
     return original;
   }
 
+  // Override manuali: raw UISP → indirizzo corretto (per vie abbreviate o ambigue)
+  const overrideIndirizzo: Record<string, string> = {
+    "S.M. Quarini Via B. Vittone/Via Monti - Chieri TO":
+      "Palestra Quarini, 10023 Chieri",
+  };
+  if (overrideIndirizzo[original]) {
+    return overrideIndirizzo[original];
+  }
+
   // Mappa abbreviazioni → forma estesa
   const abbreviazioni: [RegExp, string][] = [
     [/\bC-so\b/gi, "Corso"],
@@ -333,6 +342,7 @@ function cleanPalestra(raw: string | null | undefined): string | null {
     text = text
       .replace(/,\s*(\d)/g, " $1") // virgola prima di cifra → spazio
       .replace(/,\s*,/g, ",") // doppia virgola → singola
+      .replace(/\s*\/\s*(Via|Viale|Corso|Piazza|Piazzetta|Strada|Largo)\s+/gi, " & $1 ") // angolo strade: "Via X/Via Y" → "Via X & Via Y"
       .replace(/\s+/g, " ")
       .replace(/\s*[-–]\s*$/, "")
       .replace(/[.,\s]+$/, "") // trailing virgola/punto/spazio

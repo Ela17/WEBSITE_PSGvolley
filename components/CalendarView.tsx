@@ -112,17 +112,21 @@ export default function CalendarView({ events }: CalendarViewProps) {
 
   // Export .ics
   const handleExport = (categoria: "all" | "master" | "open") => {
-    const filtered =
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filtered = (
       categoria === "all"
         ? psgEvents
-        : psgEvents.filter((e) => e.categoria === categoria);
+        : psgEvents.filter((e) => e.categoria === categoria)
+    ).filter((e) => e.data && parseItalianDate(e.data) >= today);
 
     const label =
       categoria === "all"
         ? "PSG Volley - Tutte le Partite"
         : categoria === "master"
           ? "PSG Volley - Master 4+2"
-          : "PSG Volley - Open 3×3";
+          : "PSG Volley - Coppa Primavera Open 3×3";
     const filename =
       categoria === "all"
         ? "psg-campionato.ics"
