@@ -4,6 +4,10 @@ export interface Evento {
   slug: string;
   title: string;
   date: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  extraDates?: string[];
   location: string;
   locationLink?: string;
   description: string;
@@ -30,6 +34,10 @@ function dbToEvento(e: DBEvento, includeContent: boolean = false): Evento {
     slug: e.slug,
     title: e.title,
     date: e.date,
+    endDate: e.end_date || undefined,
+    startTime: e.start_time || undefined,
+    endTime: e.end_time || undefined,
+    extraDates: e.extra_dates || undefined,
     location: e.location || "",
     locationLink: e.location_link || undefined,
     description: e.description,
@@ -60,24 +68,42 @@ function getTodayString(): string {
 }
 
 /**
- * Controlla se una data è passata (utility sincrona)
- * @param dateStr - Data in formato YYYY-MM-DD o ISO
- * @returns true se la data è precedente a oggi
+ * Controlla se un evento è completamente passato (utility sincrona).
+ * - Con endTime: passato quando data_fine + ora_fine < adesso
+ * - Senza endTime: passato dal giorno successivo alla data_fine
  */
-export function isEventoPast(dateStr: string): boolean {
-  const today = getTodayString();
-  const eventDate = dateStr.split("T")[0]; // Normalizza a YYYY-MM-DD
-  return eventDate < today;
+export function isEventoPast(evento: {
+  date: string;
+  endDate?: string;
+  endTime?: string;
+  extraDates?: string[];
+}): boolean {
+  const effectiveEnd =
+    evento.endDate?.split("T")[0] ||
+    (evento.extraDates?.length
+      ? [...evento.extraDates].sort().at(-1)!
+      : null) ||
+    evento.date.split("T")[0];
+
+  if (evento.endTime) {
+    // Confronto preciso data+ora (ora locale, non UTC)
+    return new Date(`${effectiveEnd}T${evento.endTime}`) < new Date();
+  }
+
+  // Senza ora: passato solo dal giorno successivo
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(`${effectiveEnd}T00:00:00`) < today;
 }
 
-// Legge tutti gli eventi futuri (data >= oggi)
+// Legge tutti gli eventi futuri o in corso (end_date >= oggi, o date >= oggi se no end_date)
 export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
   const today = getTodayString();
 
   const { data, error } = await supabase
     .from("eventi")
     .select("*")
-    .gte("date", today)
+    .or(`date.gte.${today},end_date.gte.${today}`)
     .order("date", { ascending: true });
 
   if (error) {
@@ -90,7 +116,7 @@ export async function getAllEventiFuturi(): Promise<EventoPreview[]> {
     .map(dbToPreview);
 }
 
-// Legge tutti gli eventi passati (data < oggi)
+// Legge tutti gli eventi completamente passati
 export async function getAllEventiPassati(): Promise<EventoPreview[]> {
   const today = getTodayString();
 
@@ -107,7 +133,8 @@ export async function getAllEventiPassati(): Promise<EventoPreview[]> {
 
   return (data || [])
     .filter((e) => e.slug && e.slug !== "undefined" && e.slug !== "null")
-    .map(dbToPreview);
+    .map(dbToPreview)
+    .filter((e) => isEventoPast(e));
 }
 
 // Ottiene un singolo evento con contenuto completo
@@ -133,14 +160,14 @@ export async function getEventoBySlug(slug: string): Promise<Evento | null> {
   return dbToEvento(data, true);
 }
 
-// Ottiene il prossimo evento futuro (il primo in ordine cronologico)
+// Ottiene il prossimo evento futuro o in corso (il primo in ordine cronologico)
 export async function getNextEvento(): Promise<EventoPreview | null> {
   const today = getTodayString();
 
   const { data, error } = await supabase
     .from("eventi")
     .select("*")
-    .gte("date", today)
+    .or(`date.gte.${today},end_date.gte.${today}`)
     .order("date", { ascending: true })
     .limit(1);
 

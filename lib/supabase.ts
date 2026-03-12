@@ -23,6 +23,10 @@ export interface DBEvento {
   slug: string;
   title: string;
   date: string;
+  end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  extra_dates: string[] | null;
   location: string | null;
   location_link: string | null;
   description: string;

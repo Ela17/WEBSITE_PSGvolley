@@ -29,6 +29,53 @@ import LocandinaPreview from "@/components/LocandinaPreview";
 
 export const revalidate = 0;
 
+// Formatta un range di date per la visualizzazione
+function formatDateRange(
+  date: string,
+  endDate?: string,
+  extraDates?: string[]
+): string {
+  const parseDate = (d: string) => new Date(d + "T12:00:00");
+  const start = parseDate(date);
+
+  if (endDate) {
+    const end = parseDate(endDate);
+    // Stesso mese e anno: "15-17 marzo 2025"
+    if (
+      start.getMonth() === end.getMonth() &&
+      start.getFullYear() === end.getFullYear()
+    ) {
+      return `${format(start, "dd", { locale: it })}-${format(end, "dd MMMM yyyy", { locale: it })}`;
+    }
+    // Mesi diversi: "28 marzo - 2 aprile 2025"
+    if (start.getFullYear() === end.getFullYear()) {
+      return `${format(start, "dd MMMM", { locale: it })} - ${format(end, "dd MMMM yyyy", { locale: it })}`;
+    }
+    return `${format(start, "dd MMMM yyyy", { locale: it })} - ${format(end, "dd MMMM yyyy", { locale: it })}`;
+  }
+
+  if (extraDates && extraDates.length > 0) {
+    const allDates = [date, ...extraDates]
+      .filter(Boolean)
+      .sort()
+      .map((d) => format(parseDate(d), "dd MMMM yyyy", { locale: it }));
+    if (allDates.length === 2) return allDates.join(" e ");
+    return (
+      allDates.slice(0, -1).join(", ") + " e " + allDates[allDates.length - 1]
+    );
+  }
+
+  return format(start, "dd MMMM yyyy", { locale: it });
+}
+
+// Formatta l'orario
+function formatTime(startTime?: string, endTime?: string): string | null {
+  if (!startTime) return null;
+  const fmt = (t: string) => t.slice(0, 5); // "HH:MM"
+  if (endTime) return `${fmt(startTime)} - ${fmt(endTime)}`;
+  return `ore ${fmt(startTime)}`;
+}
+
 // Mappa per le icone dei tipi di evento
 const iconMap = {
   torneo: Trophy,
@@ -150,8 +197,8 @@ export default async function EventoDetailPage({
     notFound();
   }
 
-  // Calcola se l'evento è passato in base alla data
-  const isPassato = isEventoPast(evento.date);
+  // Calcola se l'evento è passato in base alla data (o data fine se presente)
+  const isPassato = isEventoPast(evento);
 
   // Ottiene le immagini (da DB o cartella legacy)
   let eventImages = getEventImages(evento);
@@ -250,13 +297,20 @@ export default async function EventoDetailPage({
 
             {/* Meta info */}
             <div className="flex flex-col sm:flex-row gap-4 text-white/95">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <Calendar className="w-5 h-5 flex-shrink-0" />
                 <span className="text-lg drop-shadow">
-                  {format(new Date(evento.date), "dd MMMM yyyy", {
-                    locale: it,
-                  })}
+                  {formatDateRange(
+                    evento.date,
+                    evento.endDate,
+                    evento.extraDates
+                  )}
                 </span>
+                {formatTime(evento.startTime, evento.endTime) && (
+                  <span className="text-lg drop-shadow text-white/80">
+                    • {formatTime(evento.startTime, evento.endTime)}
+                  </span>
+                )}
               </div>
               {evento.location && (
                 <>
@@ -296,12 +350,53 @@ export default async function EventoDetailPage({
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-2xl font-bold mb-4">Informazioni</h2>
               <div className="space-y-3">
-                {evento.fee && (
+                {/* Date */}
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
+                    <span className="font-semibold">
+                      {formatDateRange(evento.date, evento.endDate, evento.extraDates)}
+                    </span>
+                    {formatTime(evento.startTime, evento.endTime) && (
+                      <span className="text-gray-600 ml-2">
+                        • {formatTime(evento.startTime, evento.endTime)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Luogo */}
+                {evento.location && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    {evento.locationLink ? (
+                      <a
+                        href={evento.locationLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-green-700 hover:underline flex items-center gap-1"
+                      >
+                        {evento.location}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <span className="font-semibold">{evento.location}</span>
+                    )}
+                  </div>
+                )}
+
+                {evento.fee ? (
+                  <div className="flex items-center gap-2">
                     <span className="font-semibold">
                       Quota di partecipazione:
                     </span>{" "}
                     {evento.fee}
+                  </div>
+                ) : (
+                  <div>
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border border-green-300 text-sm px-3 py-1">
+                      Ingresso gratuito
+                    </Badge>
                   </div>
                 )}
                 {evento.registrationDeadline && (

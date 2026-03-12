@@ -41,6 +41,9 @@ interface Evento {
   slug: string;
   title: string;
   date: string;
+  end_date: string | null;
+  end_time: string | null;
+  extra_dates: string[] | null;
   location: string | null;
   type: string;
   category: string | null;
@@ -126,9 +129,24 @@ export default function AdminEventiPage() {
     });
   };
 
-  // Determina se evento è passato
-  const isPast = (dateStr: string) => {
-    return new Date(dateStr) < new Date();
+  // Determina se evento è completamente passato
+  // - Con end_time: passato quando data_fine + ora_fine < adesso
+  // - Senza end_time: passato dal giorno successivo
+  const isPast = (evento: Evento) => {
+    const effectiveEnd =
+      evento.end_date ||
+      (evento.extra_dates?.length
+        ? [...evento.extra_dates].sort().at(-1)!
+        : null) ||
+      evento.date;
+
+    if (evento.end_time) {
+      return new Date(`${effectiveEnd}T${evento.end_time}`) < new Date();
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(`${effectiveEnd}T00:00:00`) < today;
   };
 
   return (
@@ -200,7 +218,7 @@ export default function AdminEventiPage() {
                   {eventi.map((evento) => {
                     const config = typeConfig[evento.type] || typeConfig.altro;
                     const Icon = config.icon;
-                    const past = isPast(evento.date);
+                    const past = isPast(evento);
 
                     return (
                       <TableRow key={evento.id}>

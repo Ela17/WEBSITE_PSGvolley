@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Calendar, Info, Plus, X } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import GalleryUploader from "@/components/GalleryUploader";
 import WysiwygEditor from "@/components/WysiwygEditor";
@@ -29,6 +29,10 @@ export default function NuovoEventoPage() {
     title: "",
     slug: "",
     date: new Date().toISOString().split("T")[0],
+    endDate: "",
+    startTime: "",
+    endTime: "",
+    extraDates: [] as string[],
     type: "torneo",
     category: "",
     location: "",
@@ -69,10 +73,27 @@ export default function NuovoEventoPage() {
   // Controlla se l'evento è nel passato
   const isEventPast = () => {
     if (!form.date) return false;
-    const eventDate = new Date(form.date);
+    const effectiveEnd = form.endDate || form.extraDates.at(-1) || form.date;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return eventDate < today;
+    return new Date(effectiveEnd) < today;
+  };
+
+  const addExtraDate = () => {
+    setForm({ ...form, extraDates: [...form.extraDates, ""] });
+  };
+
+  const updateExtraDate = (idx: number, val: string) => {
+    const updated = [...form.extraDates];
+    updated[idx] = val;
+    setForm({ ...form, extraDates: updated });
+  };
+
+  const removeExtraDate = (idx: number) => {
+    setForm({
+      ...form,
+      extraDates: form.extraDates.filter((_, i) => i !== idx),
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,7 +115,10 @@ export default function NuovoEventoPage() {
             : [],
           registrationDeadline: form.registrationDeadline || null,
           googleDriveLink: form.googleDriveLink || null,
-          // Nota: images è già un array
+          endDate: form.endDate || null,
+          startTime: form.startTime || null,
+          endTime: form.endTime || null,
+          extraDates: form.extraDates.filter(Boolean),
         }),
       });
 
@@ -177,7 +201,7 @@ export default function NuovoEventoPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="date">Data evento *</Label>
+                  <Label htmlFor="date">Data inizio *</Label>
                   <Input
                     id="date"
                     type="date"
@@ -191,6 +215,81 @@ export default function NuovoEventoPage() {
                       Evento nel passato - potrai aggiungere la galleria foto
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="endDate">Data fine</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={form.endDate}
+                    onChange={(e) =>
+                      setForm({ ...form, endDate: e.target.value })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Per eventi su più giorni contigui
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="startTime">Ora inizio</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={form.startTime}
+                    onChange={(e) =>
+                      setForm({ ...form, startTime: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="endTime">Ora fine</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={form.endTime}
+                    onChange={(e) =>
+                      setForm({ ...form, endTime: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label>Date aggiuntive (giorni non contigui)</Label>
+                  <div className="space-y-2 mt-1">
+                    {form.extraDates.map((d, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          value={d}
+                          onChange={(e) => updateExtraDate(idx, e.target.value)}
+                          className="w-auto"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeExtraDate(idx)}
+                        >
+                          <X className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addExtraDate}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Aggiungi data
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Per eventi su giorni non contigui (es. due sabati separati)
+                  </p>
                 </div>
 
                 <div>
