@@ -286,9 +286,9 @@ export async function calculateRankingAsync(
   let query = supabase.from("matches").select("*").eq("categoria", categoria);
 
   if (categoria === "master" && fase === "fase1") {
-    query = query.lt("numero_gara", "613000");
+    query = query.gte("numero_gara", "730000").lt("numero_gara", "731000");
   } else if (categoria === "master" && fase === "playoff") {
-    query = query.gte("numero_gara", "613000");
+    query = query.or("numero_gara.lt.730000,numero_gara.gte.731000");
   } else if (categoria === "open" && fase === "gironi") {
     query = query.lt("numero_gara", "743000");
   } else if (categoria === "open" && fase === "coppa") {
