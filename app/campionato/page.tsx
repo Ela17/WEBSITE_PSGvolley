@@ -11,13 +11,19 @@ export const revalidate = 0; // Disabilita il caching statico
 
 export default async function CampionatoPage() {
   // Carica dati dal database
-  const [masterRanking, openCoppaRanking, openGironiRanking, allEvents] =
-    await Promise.all([
-      calculateRankingAsync("master"),
-      calculateRankingAsync("open", "coppa"),
-      calculateRankingAsync("open", "gironi"),
-      getAllCalendarEventsAsync(),
-    ]);
+  const [
+    masterPlayoffRanking,
+    masterFase1Ranking,
+    openCoppaRanking,
+    openGironiRanking,
+    allEvents,
+  ] = await Promise.all([
+    calculateRankingAsync("master", "playoff"),
+    calculateRankingAsync("master", "fase1"),
+    calculateRankingAsync("open", "coppa"),
+    calculateRankingAsync("open", "gironi"),
+    getAllCalendarEventsAsync(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,14 +46,14 @@ export default async function CampionatoPage() {
 
           {/* Grid 2 colonne */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Classifica Master */}
+            {/* Classifica Master – Play Off */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">
-                  Classifica Master (4+2)
+                  Classifica Master (4+2) — Play Off
                 </h3>
                 <a
-                  href="https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/edit?gid=1144088727#gid=1144088727"
+                  href="https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -57,7 +63,7 @@ export default async function CampionatoPage() {
                 </a>
               </div>
               <RankingTable
-                ranking={masterRanking}
+                ranking={masterPlayoffRanking}
                 title=""
                 categoria="master"
               />
@@ -87,13 +93,48 @@ export default async function CampionatoPage() {
             </div>
           </div>
 
-          {/* Archivio gironi – collassabile */}
+          {/* Archivio Fase 1 Master – collassabile */}
+          {masterFase1Ranking.length > 0 && (
+            <details className="mt-6 group">
+              <summary className="flex items-center gap-2 cursor-pointer list-none w-fit">
+                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Campionato Master — Fase 1 (archivio)
+                </span>
+              </summary>
+              <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-muted-foreground">
+                      Classifica Master 4+2 — Fase 1
+                    </h3>
+                    <a
+                      href="https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/edit?gid=1144088727#gid=1144088727"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                    >
+                      Classifica ufficiale UISP
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                  <RankingTable
+                    ranking={masterFase1Ranking}
+                    title=""
+                    categoria="master"
+                  />
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Archivio gironi Open – collassabile */}
           {openGironiRanking.length > 0 && (
             <details className="mt-6 group">
               <summary className="flex items-center gap-2 cursor-pointer list-none w-fit">
                 <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Fase a Gironi (archivio)
+                  Fase a Gironi Open (archivio)
                 </span>
               </summary>
               <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">

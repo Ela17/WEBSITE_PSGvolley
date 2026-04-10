@@ -18,10 +18,10 @@ import { createAdminClient } from "./supabase";
 // Formato: https://docs.google.com/spreadsheets/d/{ID}/export?format=csv&gid={GID}
 const UISP_SHEETS = {
   master: {
-    url: "https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/export?format=csv&gid=1144088727",
+    url: "https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/export?format=csv&gid=190893738",
     categoria: "master" as const,
-    categoryIdentifier: "4+2",
-    maxNumeroGara: null, // Nessun limite
+    categoryIdentifier: "PO 4+2",
+    maxNumeroGara: null,
   },
   open: {
     url: "https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/export?format=csv&gid=190893738",
@@ -342,7 +342,10 @@ function cleanPalestra(raw: string | null | undefined): string | null {
     text = text
       .replace(/,\s*(\d)/g, " $1") // virgola prima di cifra → spazio
       .replace(/,\s*,/g, ",") // doppia virgola → singola
-      .replace(/\s*\/\s*(Via|Viale|Corso|Piazza|Piazzetta|Strada|Largo)\s+/gi, " & $1 ") // angolo strade: "Via X/Via Y" → "Via X & Via Y"
+      .replace(
+        /\s*\/\s*(Via|Viale|Corso|Piazza|Piazzetta|Strada|Largo)\s+/gi,
+        " & $1 ",
+      ) // angolo strade: "Via X/Via Y" → "Via X & Via Y"
       .replace(/\s+/g, " ")
       .replace(/\s*[-–]\s*$/, "")
       .replace(/[.,\s]+$/, "") // trailing virgola/punto/spazio
