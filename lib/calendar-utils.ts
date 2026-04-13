@@ -51,24 +51,99 @@ function addTwoHours(icsDateTime: string): string {
 }
 
 /**
+ * Genera DTSTAMP in formato UTC (ora corrente)
+ */
+function getDtstamp(): string {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  const h = String(now.getUTCHours()).padStart(2, "0");
+  const min = String(now.getUTCMinutes()).padStart(2, "0");
+  const s = String(now.getUTCSeconds()).padStart(2, "0");
+  return `${y}${m}${d}T${h}${min}${s}Z`;
+}
+
+/**
+ * Escape caratteri speciali per valori ICS (RFC 5545 §3.3.11)
+ */
+function escapeIcsValue(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,");
+}
+
+/**
+ * Line folding RFC 5545: righe max 75 byte, continuazione con CRLF + spazio
+ */
+function foldLine(line: string): string {
+  const MAX = 75;
+  if (line.length <= MAX) return line;
+
+  const parts: string[] = [];
+  parts.push(line.slice(0, MAX));
+  let pos = MAX;
+  while (pos < line.length) {
+    // Le righe di continuazione iniziano con uno spazio → 74 char utili
+    parts.push(" " + line.slice(pos, pos + MAX - 1));
+    pos += MAX - 1;
+  }
+  return parts.join("\r\n");
+}
+
+/**
+ * Blocco VTIMEZONE per Europe/Rome (CET/CEST)
+ * Necessario perché usiamo DTSTART;TZID=Europe/Rome
+ */
+const VTIMEZONE_ROME = [
+  "BEGIN:VTIMEZONE",
+  "TZID:Europe/Rome",
+  "BEGIN:STANDARD",
+  "DTSTART:19701025T030000",
+  "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10",
+  "TZOFFSETFROM:+0200",
+  "TZOFFSETTO:+0100",
+  "TZNAME:CET",
+  "END:STANDARD",
+  "BEGIN:DAYLIGHT",
+  "DTSTART:19700329T020000",
+  "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3",
+  "TZOFFSETFROM:+0100",
+  "TZOFFSETTO:+0200",
+  "TZNAME:CEST",
+  "END:DAYLIGHT",
+  "END:VTIMEZONE",
+].join("\r\n");
+
+/**
  * Genera il contenuto di un file .ics per un insieme di eventi PSG
  */
-export function generateICS(events: CalendarEvent[], calendarName: string): string {
+export function generateICS(
+  events: CalendarEvent[],
+  calendarName: string,
+): string {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//PSG Volley//Campionato UISP//IT",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    `X-WR-CALNAME:${calendarName}`,
+    `X-WR-CALNAME:${escapeIcsValue(calendarName)}`,
     "X-WR-TIMEZONE:Europe/Rome",
   ];
+
+  // Aggiungi definizione timezone
+  lines.push(VTIMEZONE_ROME);
+
+  const dtstamp = getDtstamp();
 
   for (const event of events) {
     if (!event.data) continue;
     const dtStart = toIcsDateTime(event.data, event.ora);
     const dtEnd = addTwoHours(dtStart);
-    const categLabel = event.categoria === "master" ? "Master 4+2" : "Open 3×3";
+    const categLabel =
+      event.categoria === "master" ? "Master 4+2" : "Open 3x3";
     const summary = `${event.squadraA} vs ${event.squadraB} (${categLabel})`;
     const descParts = [`Campionato ${categLabel}`, `Gara #${event.id}`];
     if (event.palestra) descParts.push(`Palestra: ${event.palestra}`);
@@ -83,11 +158,13 @@ export function generateICS(events: CalendarEvent[], calendarName: string): stri
     const uid = `psg-campionato-${event.id}@psgsangiuseppe.it`;
 
     lines.push("BEGIN:VEVENT");
+    lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`DTSTART;TZID=Europe/Rome:${dtStart}`);
     lines.push(`DTEND;TZID=Europe/Rome:${dtEnd}`);
-    lines.push(`SUMMARY:${summary}`);
-    lines.push(`DESCRIPTION:${description}`);
-    if (location) lines.push(`LOCATION:${location}`);
+    lines.push(foldLine(`SUMMARY:${escapeIcsValue(summary)}`));
+    lines.push(foldLine(`DESCRIPTION:${escapeIcsValue(description)}`));
+    if (location)
+      lines.push(foldLine(`LOCATION:${escapeIcsValue(location)}`));
     lines.push(`UID:${uid}`);
     lines.push("END:VEVENT");
   }
@@ -103,7 +180,7 @@ export function generateICS(events: CalendarEvent[], calendarName: string): stri
 export function getGoogleCalendarLink(event: CalendarEvent): string {
   const dtStart = toIcsDateTime(event.data, event.ora);
   const dtEnd = addTwoHours(dtStart);
-  const categLabel = event.categoria === "master" ? "Master 4+2" : "Open 3×3";
+  const categLabel = event.categoria === "master" ? "Master 4+2" : "Open 3x3";
   const title = `${event.squadraA} vs ${event.squadraB} (${categLabel})`;
   const descParts = [`Campionato ${categLabel}`, `Gara #${event.id}`];
   if (event.note) descParts.push(`Note: ${event.note}`);
