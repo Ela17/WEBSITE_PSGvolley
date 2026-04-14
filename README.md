@@ -548,9 +548,9 @@ Sezione Pallavolo - ASD Patrocinio San Giuseppe, Torino
 - 📍 **Sede**: [Via Pietro Baiardi 4, Torino](https://www.google.com/maps/search/?api=1&query=Via+Pietro+Baiardi+4,+Torino)
 - 🏐 **UISP Torino**: [Pallavolo Piemonte](https://sites.google.com/view/uisppallavolopiemonte/home-page)
 - 📊 **Classifica Master 4+2 Prima Fase**: [Google Sheets](https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/edit?gid=1144088727)
-- - 📊 **Classifica Master 4+2 Play-Off**: [Google Sheets](https://docs.google.com/spreadsheets/d/11JQaxlU4oQEbbMHyBguQMCOoKlsFOqwq/edit?gid=705532696#gid=705532696)
+  - 📊 **Classifica Master 4+2 Play-Off**: [Google Sheets](https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738)
 - 📊 **Classifica Open 3×3 Prima Fase**: [Google Sheets](https://docs.google.com/spreadsheets/d/17hDPCNtiHUIJ-zQ4FyDCoJFfjy9j5U8g/edit?gid=792185880)
-- - 📊 **Classifica Open 3×3 Coppa Primavera A**: [Google Sheets](https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/edit?gid=1047000272#gid=1047000272)
+  - 📊 **Classifica Open 3×3 Coppa Primavera A**: [Google Sheets](https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/edit?gid=1047000272#gid=1047000272)
 
 ---
 
