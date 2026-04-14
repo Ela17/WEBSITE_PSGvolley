@@ -192,7 +192,7 @@ export default async function CampionatoPage() {
           <h3 className="text-lg font-semibold mb-4">Link Utili</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <a
-              href="https://docs.google.com/spreadsheets/d/11JQaxlU4oQEbbMHyBguQMCOoKlsFOqwq/edit?gid=705532696#gid=705532696"
+              href="https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:hover:bg-blue-900 transition-colors"
