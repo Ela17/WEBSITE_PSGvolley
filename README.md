@@ -236,6 +236,7 @@ Bucket: `psg-volley-images`
 - **iron-session**: Cookie-based sessioni sicure
 - **bcrypt**: Password hashing con Base64 encoding
 - **Environment variables**: Username e hash password
+- **proxy.ts**: Protezione route `/admin/**` server-side (Next.js 16 proxy)
 
 ## 📁 Struttura del Progetto
 
