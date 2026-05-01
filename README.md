@@ -152,7 +152,6 @@ Sistema automatico di sincronizzazione dati:
 
 - **[embla-carousel-react](https://www.embla-carousel.com/)** - Caroselli immagini
 - **[clsx](https://github.com/lukeed/clsx)** + **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** - Class utilities
-- **[react-dropzone](https://react-dropzone.js.org/)** - Drag & drop upload
 
 ## 🏗 Architettura
 
@@ -237,7 +236,6 @@ Bucket: `psg-volley-images`
 - **iron-session**: Cookie-based sessioni sicure
 - **bcrypt**: Password hashing con Base64 encoding
 - **Environment variables**: Username e hash password
-- **Middleware**: Protezione route admin
 
 ## 📁 Struttura del Progetto
 
@@ -280,9 +278,9 @@ psg-volley/
 │   ├── TeamSearch.tsx           # Ricerca squadre con filtri
 │   ├── NextMatchCard.tsx        # Card prossima partita
 │   ├── ImagesCarousel.tsx       # Carosello fullscreen
-│   ├── TiptapEditor.tsx         # Editor WYSIWYG
+│   ├── WysiwygEditor.tsx        # Editor WYSIWYG
 │   ├── UISPSyncButton.tsx       # Button sync UISP
-│   ├── ImageUpload.tsx          # Upload drag & drop
+│   ├── ImageUploader.tsx        # Upload drag & drop
 │   ├── ScrollToTop.tsx          # Scroll-to-top button
 │   └── Breadcrumbs.tsx          # Breadcrumbs navigazione
 ├── lib/                          # Utilities e logica business
