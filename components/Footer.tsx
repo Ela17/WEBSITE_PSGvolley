@@ -2,11 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   FaInstagram,
+  FaFacebook,
   FaDirections,
   FaRegCopyright,
   FaGithub,
   FaLock,
 } from "react-icons/fa";
+import { SOCIAL } from "@/lib/social";
 
 export default function Footer() {
   return (
@@ -38,17 +40,26 @@ export default function Footer() {
               </a>
             </div>
 
-            {/* Instagram inline */}
-            <div className="flex items-center gap-2 mb-2">
+            {/* Social inline */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2">
               <span className="font-semibold text-sm">Seguici:</span>
               <Link
-                href="https://www.instagram.com/asd_patrociniosgiuseppe/"
+                href={SOCIAL.instagram.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
               >
                 <FaInstagram className="w-5 h-5" />
-                <span className="text-sm">@asd_patrociniosgiuseppe</span>
+                <span className="text-sm">{SOCIAL.instagram.handle}</span>
+              </Link>
+              <Link
+                href={SOCIAL.facebook.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+              >
+                <FaFacebook className="w-5 h-5" />
+                <span className="text-sm">{SOCIAL.facebook.label}</span>
               </Link>
             </div>
 

@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
+import { FaInstagram, FaFacebook } from "react-icons/fa";
+import { SOCIAL } from "@/lib/social";
 
 export default function ChiSiamoPage() {
   return (
@@ -137,14 +139,26 @@ export default function ChiSiamoPage() {
           <p className="text-gray-600 mb-6">
             Contattaci per maggiori informazioni!
           </p>
-          <a
-            href="https://www.instagram.com/asd_patrociniosgiuseppe/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-          >
-            Seguici su Instagram
-          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href={SOCIAL.instagram.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              <FaInstagram className="w-5 h-5" />
+              Seguici su Instagram
+            </a>
+            <a
+              href={SOCIAL.facebook.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-8 py-3 rounded-lg hover:bg-[#166FE5] transition-colors font-semibold"
+            >
+              <FaFacebook className="w-5 h-5" />
+              Seguici su Facebook
+            </a>
+          </div>
         </div>
       </div>
     </main>
