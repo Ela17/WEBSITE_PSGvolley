@@ -309,7 +309,11 @@ export async function calculateRankingAsync(
   }
 
   const matchResults = matches.map(dbToMatchResult);
-  return calculateRanking(matchResults, true);
+  return calculateRanking(
+    matchResults,
+    true,
+    categoria === "league" ? "ivl" : "uisp",
+  );
 }
 
 /**
@@ -318,8 +322,15 @@ export async function calculateRankingAsync(
 export function calculateRanking(
   matches: MatchResult[],
   includeEmpty = false,
+  regolamento: "uisp" | "ivl" = "uisp",
 ): Ranking[] {
   const rankingMap = new Map<string, Ranking>();
+  // Punti ottenuti negli scontri diretti: "A|B" -> punti di A contro B
+  const scontriDiretti = new Map<string, number>();
+  const addScontro = (a: string, b: string, punti: number) => {
+    const key = `${a}|${b}`;
+    scontriDiretti.set(key, (scontriDiretti.get(key) ?? 0) + punti);
+  };
   const allTeams = new Set<string>();
 
   for (const match of matches) {
@@ -397,16 +408,21 @@ export function calculateRanking(
       stats.puntiVinti += pF;
       stats.puntiPersi += pS;
 
+      let puntiPartita = 0;
       if (setsWon > setsLost) {
-        stats.punti += setsLost === 2 && setsWon === 3 ? 2 : 3;
+        puntiPartita = setsLost === 2 && setsWon === 3 ? 2 : 3;
         stats.partiteVinte += 1;
       } else if (setsWon < setsLost) {
-        stats.punti += setsWon === 2 && setsLost === 3 ? 1 : 0;
+        puntiPartita = setsWon === 2 && setsLost === 3 ? 1 : 0;
       }
+      stats.punti += puntiPartita;
+      return puntiPartita;
     };
 
-    updateStats(teamA, setA, setB, puntiVintiA, puntiPersiA);
-    updateStats(teamB, setB, setA, puntiPersiA, puntiVintiA); // invertiti per B
+    const puntiA = updateStats(teamA, setA, setB, puntiVintiA, puntiPersiA);
+    const puntiB = updateStats(teamB, setB, setA, puntiPersiA, puntiVintiA); // invertiti per B
+    addScontro(teamA, teamB, puntiA);
+    addScontro(teamB, teamA, puntiB);
   }
 
   /**
@@ -415,6 +431,10 @@ export function calculateRanking(
    * Ove nel punteggio di classifica finale due o più squadre risultino alla pari la graduatoria sarà così stabilita:
    * a. Quoziente sets — in base al più favorevole quoziente tra i sets vinti e quelli perduti.
    * b. Quoziente punti — in caso di parità del quoziente sets, in relazione al più favorevole quoziente tra i punti realizzati e quelli subiti.
+   *
+   * Dal regolamento Italian Volley League (Piemonte, Campionati Open 26/27, art. 10):
+   * in caso di parità di punti: 1) maggior numero di partite vinte; 2) quoziente set;
+   * 3) quoziente punti; 4) scontri diretti.
    */
   const finalRanking = Array.from(rankingMap.values())
     .map((team) => ({
@@ -429,10 +449,19 @@ export function calculateRanking(
     .filter((team) => includeEmpty || team.partiteGiocate > 0)
     .sort((a, b) => {
       if (b.punti !== a.punti) return b.punti - a.punti;
+      if (regolamento === "ivl" && b.partiteVinte !== a.partiteVinte)
+        return b.partiteVinte - a.partiteVinte; // IVL: 1° spareggio
       if (b.quozienteSet !== a.quozienteSet)
         return b.quozienteSet - a.quozienteSet; // 1° spareggio
       if (b.quozientePunti !== a.quozientePunti)
         return b.quozientePunti - a.quozientePunti; // 2° spareggio
+      if (regolamento === "ivl") {
+        // IVL: ultimo spareggio, scontri diretti (punti ottenuti tra le due squadre)
+        const diff =
+          (scontriDiretti.get(`${b.squadra}|${a.squadra}`) ?? 0) -
+          (scontriDiretti.get(`${a.squadra}|${b.squadra}`) ?? 0);
+        if (diff !== 0) return diff;
+      }
       return 0;
     });
 
