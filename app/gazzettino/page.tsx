@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAllGazzettinoPostsPreview } from "@/lib/gazzettino";
+import { notFound } from "next/navigation";
+import { FEATURES } from "@/lib/features";
 import {
   Card,
   CardContent,
@@ -15,6 +17,9 @@ import { HeartCrack, Calendar, Tag } from "lucide-react";
 export const revalidate = 0;
 
 export default async function GazzettinoPage() {
+  // Sezione nascosta: vedi lib/features.ts
+  if (!FEATURES.gazzettino) notFound();
+
   const allPosts = await getAllGazzettinoPostsPreview();
 
   return (

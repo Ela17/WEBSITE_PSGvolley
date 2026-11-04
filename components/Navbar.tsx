@@ -6,6 +6,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { FEATURES } from "@/lib/features";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,10 +15,10 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/chi-siamo", label: "Chi Siamo" },
-    { href: "/gazzettino", label: "Gazzettino" },
+    { href: "/gazzettino", label: "Gazzettino", enabled: FEATURES.gazzettino },
     { href: "/eventi", label: "Eventi" },
     { href: "/campionato", label: "Campionato" },
-  ];
+  ].filter((link) => link.enabled !== false);
 
   return (
     <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">

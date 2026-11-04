@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FEATURES } from "@/lib/features";
 import {
   getGazzettinoPostBySlug,
   getAllGazzettinoSlugs,
@@ -16,6 +17,7 @@ export const revalidate = 0;
 
 // Genera i path statici per tutti gli articoli
 export async function generateStaticParams() {
+  if (!FEATURES.gazzettino) return [];
   const slugs = await getAllGazzettinoSlugs();
   return slugs.map((slug) => ({ slug }));
 }
@@ -25,6 +27,9 @@ export default async function GazzettinoArticlePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // Sezione nascosta: vedi lib/features.ts
+  if (!FEATURES.gazzettino) notFound();
+
   const { slug } = await params;
   const post = await getGazzettinoPostBySlug(slug);
 

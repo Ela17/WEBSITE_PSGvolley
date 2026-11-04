@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { FileText, Calendar, Trophy, LogOut, Shield } from "lucide-react";
+import { FEATURES } from "@/lib/features";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -46,7 +47,8 @@ export default function AdminPage() {
 
         {/* Sezioni Admin */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Gazzettino */}
+          {/* Gazzettino (nascosto, vedi lib/features.ts) */}
+          {FEATURES.gazzettino && (
           <Link href="/admin/gazzettino">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -69,6 +71,7 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </Link>
+          )}
 
           {/* Eventi */}
           <Link href="/admin/eventi">
@@ -112,7 +115,7 @@ export default function AdminPage() {
                 <ul className="text-sm space-y-1 text-muted-foreground">
                   <li>• Inserisci risultati partite</li>
                   <li>• Modifica date e orari</li>
-                  <li>• Gestisci CSV Master e Open</li>
+                  <li>• Sincronizza UISP e Volley League</li>
                 </ul>
               </CardContent>
             </Card>
