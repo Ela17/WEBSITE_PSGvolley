@@ -5,7 +5,14 @@ export type { Ranking, CalendarEvent } from "./campionato-types";
 export { parseItalianDate, getCategoriaLabel } from "./campionato-types";
 
 import type { Ranking, CalendarEvent } from "./campionato-types";
-import { parseItalianDate } from "./campionato-types";
+import { parseItalianDate, PSG_TEAM_BY_CATEGORIA } from "./campionato-types";
+import type { Categoria } from "./campionato-types";
+
+const CAT_ORIGINALE: Record<Categoria, string> = {
+  master: "4+2",
+  open: "OPMSB",
+  league: "IVL",
+};
 
 // Interfaccia per match dal DB (compatibile con MatchResult legacy)
 export interface MatchResult {
@@ -38,7 +45,7 @@ function dbToMatchResult(match: DBMatch): MatchResult {
   const punteggi = match.punteggi_set || [];
 
   return {
-    CAT: match.categoria === "master" ? "4+2" : "OPMSB",
+    CAT: CAT_ORIGINALE[match.categoria],
     "N. Gara": match.numero_gara,
     Data: match.data,
     Ora: match.ora || "",
@@ -78,7 +85,7 @@ function dbToCalendarEvent(match: DBMatch): CalendarEvent {
     indirizzo_maps: match.indirizzo_maps || null,
     note: match.note || "",
     categoria: match.categoria,
-    categoriaOriginale: match.categoria === "master" ? "4+2" : "OPMSB",
+    categoriaOriginale: CAT_ORIGINALE[match.categoria],
     risultato: hasResult
       ? {
           setA: match.set_a_vinti!,
@@ -95,7 +102,7 @@ function dbToCalendarEvent(match: DBMatch): CalendarEvent {
  * Legge tutte le partite di una categoria dal database
  */
 export async function getMatchesByCategoria(
-  categoria: "master" | "open",
+  categoria: Categoria,
 ): Promise<MatchResult[]> {
   const { data, error } = await supabase
     .from("matches")
@@ -134,8 +141,8 @@ export function readCampionatoCSV(filePath: string): MatchResult[] {
  * Trova prossima partita dal database
  */
 export async function getNextMatchAsync(
-  categoria: "master" | "open",
-  teamName: string = "ASD Patr. San Giuseppe",
+  categoria: Categoria,
+  teamName: string = PSG_TEAM_BY_CATEGORIA[categoria],
 ): Promise<CalendarEvent | null> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -164,7 +171,7 @@ export async function getNextMatchAsync(
  */
 export function getNextMatch(
   matches: MatchResult[],
-  teamName: string = "ASD Patr. San Giuseppe",
+  teamName: string = "San Giuseppe",
 ): CalendarEvent | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -201,7 +208,7 @@ export function getNextMatch(
  */
 export function convertToCalendarEvent(
   match: MatchResult,
-  categoria: "master" | "open",
+  categoria: Categoria,
 ): CalendarEvent {
   const hasResult = match.SetA_Vinti && match.SetB_Vinti;
 
@@ -276,37 +283,33 @@ export function getAllCalendarEvents(): CalendarEvent[] {
 }
 
 /**
- * Calcola classifica dal database
- * @param fase - 'fase1' / 'playoff' per master, 'gironi' / 'coppa' per open. Ometti per tutte.
+ * Calcola classifica dal database (stagione corrente, fase unica).
+ * Mostra tutte le squadre anche a 0 punti, utile a inizio stagione.
  */
 export async function calculateRankingAsync(
-  categoria: "master" | "open",
-  fase?: "fase1" | "playoff" | "gironi" | "coppa",
+  categoria: Categoria,
 ): Promise<Ranking[]> {
-  let query = supabase.from("matches").select("*").eq("categoria", categoria);
-
-  if (categoria === "master" && fase === "fase1") {
-    query = query.gte("numero_gara", "730000").lt("numero_gara", "731000");
-  } else if (categoria === "master" && fase === "playoff") {
-    query = query.or("numero_gara.lt.730000,numero_gara.gte.731000");
-  } else if (categoria === "open" && fase === "gironi") {
-    query = query.lt("numero_gara", "743000");
-  } else if (categoria === "open" && fase === "coppa") {
-    query = query.gte("numero_gara", "743000");
-  }
-
-  const { data: matches, error } = await query;
+  const { data, error } = await supabase
+    .from("matches")
+    .select("*")
+    .eq("categoria", categoria);
 
   if (error) {
-    console.error(
-      `Errore calculateRankingAsync(${categoria}, ${fase}):`,
-      error,
-    );
+    console.error(`Errore calculateRankingAsync(${categoria}):`, error);
     return [];
   }
 
-  const matchResults = (matches || []).map(dbToMatchResult);
-  return calculateRanking(matchResults, fase === "coppa" || fase === "playoff");
+  let matches = data || [];
+
+  // Volley League: numero_gara = "<girone_id>-<id>" -> solo il girone più recente
+  if (categoria === "league" && matches.length > 0) {
+    const gironeOf = (m: DBMatch) => parseInt(m.numero_gara.split("-")[0], 10) || 0;
+    const ultimoGirone = Math.max(...matches.map(gironeOf));
+    matches = matches.filter((m) => gironeOf(m) === ultimoGirone);
+  }
+
+  const matchResults = matches.map(dbToMatchResult);
+  return calculateRanking(matchResults, true);
 }
 
 /**

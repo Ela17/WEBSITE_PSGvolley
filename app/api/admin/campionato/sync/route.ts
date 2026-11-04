@@ -12,6 +12,7 @@ export async function POST() {
       success: report.success,
       master: `${report.master.nuovi} nuovi, ${report.master.aggiornati} aggiornati`,
       open: `${report.open.nuovi} nuovi, ${report.open.aggiornati} aggiornati`,
+      league: `${report.league.nuovi} nuovi, ${report.league.aggiornati} aggiornati`,
       errori: report.errors.length,
     });
 
@@ -46,6 +47,10 @@ export async function GET() {
       open: {
         totale: preview.open.length,
         partite: preview.open.slice(0, 5), // Prime 5 per preview
+      },
+      league: {
+        totale: preview.league.length,
+        partite: preview.league.slice(0, 5), // Prime 5 per preview
       },
       errors: preview.errors,
     });

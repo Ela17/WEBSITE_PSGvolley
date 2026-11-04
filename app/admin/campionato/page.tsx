@@ -300,6 +300,7 @@ export default function AdminCampionatoPage() {
   // Filtra partite per categoria
   const masterMatches = matches.filter((m) => m.categoria === "master");
   const openMatches = matches.filter((m) => m.categoria === "open");
+  const leagueMatches = matches.filter((m) => m.categoria === "league");
 
   // Filtra per ricerca (numero gara o squadre)
   const filterBySearch = (matchList: Match[]): Match[] => {
@@ -315,6 +316,7 @@ export default function AdminCampionatoPage() {
 
   const filteredMasterMatches = filterBySearch(masterMatches);
   const filteredOpenMatches = filterBySearch(openMatches);
+  const filteredLeagueMatches = filterBySearch(leagueMatches);
 
   // Componente tabella partite
   const MatchesTable = ({
@@ -607,6 +609,14 @@ export default function AdminCampionatoPage() {
                       : ""}
                     )
                   </TabsTrigger>
+                  <TabsTrigger value="league">
+                    VOLLEY LEAGUE ({filteredLeagueMatches.length}
+                    {searchQuery &&
+                    filteredLeagueMatches.length !== leagueMatches.length
+                      ? ` / ${leagueMatches.length}`
+                      : ""}
+                    )
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="master">
@@ -620,6 +630,13 @@ export default function AdminCampionatoPage() {
                   <MatchesTable
                     matches={filteredOpenMatches}
                     categoria="open"
+                  />
+                </TabsContent>
+
+                <TabsContent value="league">
+                  <MatchesTable
+                    matches={filteredLeagueMatches}
+                    categoria="league"
                   />
                 </TabsContent>
               </Tabs>

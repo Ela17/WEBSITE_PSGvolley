@@ -1,3 +1,62 @@
+// ============================================
+// CATEGORIE / CAMPIONATI
+// ============================================
+
+export type Categoria = "master" | "open" | "league";
+
+export const CATEGORIE: Categoria[] = ["master", "open", "league"];
+
+export const CATEGORIA_INFO: Record<
+  Categoria,
+  { label: string; nome: string; short: string; border: string; solid: string }
+> = {
+  master: {
+    label: "MASTER 4+2",
+    nome: "Master 4+2",
+    short: "4+2",
+    border: "border-l-blue-500",
+    solid: "bg-blue-500 hover:bg-blue-600",
+  },
+  open: {
+    label: "OPEN 3×3",
+    nome: "Open 3×3",
+    short: "3×3",
+    border: "border-l-orange-500",
+    solid: "bg-green-500 hover:bg-green-600",
+  },
+  league: {
+    label: "VOLLEY LEAGUE",
+    nome: "Volley League",
+    short: "IVL",
+    border: "border-l-purple-500",
+    solid: "bg-purple-500 hover:bg-purple-600",
+  },
+};
+
+// ============================================
+// SQUADRE PSG
+// ============================================
+
+/**
+ * Sottostringhe che identificano le squadre PSG nei vari campionati.
+ * UISP: "ASD Patr. San Giuseppe" (25/26) / "ASD Patrocinio San Giuseppe" (26/27)
+ * Volley League: "I Sifoni"
+ */
+export const PSG_TEAM_BY_CATEGORIA: Record<Categoria, string> = {
+  master: "San Giuseppe",
+  open: "San Giuseppe",
+  league: "Sifoni",
+};
+
+const PSG_TEAMS = [...new Set(Object.values(PSG_TEAM_BY_CATEGORIA))];
+
+/** true se il nome è di una squadra PSG (qualsiasi campionato) */
+export function isPSGTeam(name: string | null | undefined): boolean {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return PSG_TEAMS.some((t) => n.includes(t.toLowerCase()));
+}
+
 export interface MatchResult {
   CAT: string;
   "N. Gara": string;
@@ -44,7 +103,7 @@ export interface CalendarEvent {
   palestra: string;
   indirizzo_maps: string | null;
   note: string;
-  categoria: "master" | "open";
+  categoria: Categoria;
   categoriaOriginale: string;
   risultato?: {
     setA: number;
@@ -53,8 +112,8 @@ export interface CalendarEvent {
   };
 }
 
-export function getCategoriaLabel(categoria: "master" | "open"): string {
-  return categoria === "master" ? "MASTER 4+2" : "OPEN 3×3";
+export function getCategoriaLabel(categoria: Categoria): string {
+  return CATEGORIA_INFO[categoria]?.label ?? categoria;
 }
 
 /**

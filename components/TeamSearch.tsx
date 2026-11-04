@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarEvent, parseItalianDate, getCategoriaLabel, formatDateItalian } from "@/lib/campionato-types";
+import {
+  CalendarEvent,
+  parseItalianDate,
+  getCategoriaLabel,
+  formatDateItalian,
+  CATEGORIA_INFO,
+  type Categoria,
+} from "@/lib/campionato-types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +20,7 @@ interface TeamSearchProps {
   events: CalendarEvent[];
 }
 
-type CategoriaFilter = "all" | "master" | "open";
+type CategoriaFilter = "all" | Categoria;
 
 export default function TeamSearch({ events }: TeamSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,7 +102,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
 
         {/* Toggle categoria - visibile solo con ricerca attiva */}
         {hasSearch && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={categoriaFilter === "all" ? "default" : "outline"}
               size="sm"
@@ -120,6 +127,14 @@ export default function TeamSearch({ events }: TeamSearchProps) {
             >
               3×3
             </Button>
+            <Button
+              variant={categoriaFilter === "league" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaFilter("league")}
+              className="min-w-[80px]"
+            >
+              IVL
+            </Button>
           </div>
         )}
       </div>
@@ -131,7 +146,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
           <p className="text-muted-foreground">
             Nessuna partita trovata per "{searchQuery}"
             {categoriaFilter !== "all" &&
-              ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
+              ` nel campionato ${CATEGORIA_INFO[categoriaFilter].nome}`}
           </p>
           <div className="flex gap-2 justify-center mt-4">
             <Button variant="link" size="sm" onClick={() => setSearchQuery("")}>
@@ -154,7 +169,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
             <p className="text-sm text-muted-foreground">
               {pastEvents.length} {pastEvents.length === 1 ? "partita giocata" : "partite giocate"}
               {categoriaFilter !== "all" &&
-                ` nel campionato ${categoriaFilter === "master" ? "Master 4+2" : "Open 3×3"}`}
+                ` nel campionato ${CATEGORIA_INFO[categoriaFilter].nome}`}
             </p>
             {futureEventsCount > 0 && (
               <Badge variant="outline" className="text-xs">
@@ -169,12 +184,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
                   {/* Badge categoria */}
                   <Badge
                     variant={event.categoria === "master" ? "default" : "secondary"}
-                    className={cn(
-                      "shrink-0",
-                      event.categoria === "master"
-                        ? "bg-blue-500 hover:bg-blue-600"
-                        : "bg-green-500 hover:bg-green-600"
-                    )}
+                    className={cn("shrink-0", CATEGORIA_INFO[event.categoria].solid)}
                   >
                     <Trophy className="w-3 h-3 mr-1" />
                     {getCategoriaLabel(event.categoria)}

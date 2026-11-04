@@ -5,23 +5,17 @@ import {
 import CalendarView from "@/components/CalendarView";
 import RankingTable from "@/components/RankingTable";
 import TeamSearch from "@/components/TeamSearch";
-import { ExternalLink, ChevronDown } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { IVL_CALENDARIO_URL } from "@/lib/ivl-sync";
 
 export const revalidate = 0; // Disabilita il caching statico
 
 export default async function CampionatoPage() {
   // Carica dati dal database
-  const [
-    masterPlayoffRanking,
-    masterFase1Ranking,
-    openCoppaRanking,
-    openGironiRanking,
-    allEvents,
-  ] = await Promise.all([
-    calculateRankingAsync("master", "playoff"),
-    calculateRankingAsync("master", "fase1"),
-    calculateRankingAsync("open", "coppa"),
-    calculateRankingAsync("open", "gironi"),
+  const [masterRanking, openRanking, leagueRanking, allEvents] = await Promise.all([
+    calculateRankingAsync("master"),
+    calculateRankingAsync("open"),
+    calculateRankingAsync("league"),
     getAllCalendarEventsAsync(),
   ]);
 
@@ -30,7 +24,7 @@ export default async function CampionatoPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-900 dark:to-blue-950 text-white py-12">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-2">Campionato UISP</h1>
+          <h1 className="text-4xl font-bold mb-2">Campionati</h1>
           <p className="text-blue-100 text-lg">
             Classifiche e calendario partite
           </p>
@@ -46,14 +40,14 @@ export default async function CampionatoPage() {
 
           {/* Grid 2 colonne */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Classifica Master – Play Off */}
+            {/* Classifica Master 4+2 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">
-                  Classifica Master (4+2) — Play Off
+                  Classifica Master (4+2) — Girone Unico
                 </h3>
                 <a
-                  href="https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738"
+                  href="https://docs.google.com/spreadsheets/d/1sNELIWvG3DkCs9S2wg7vZIwYrUO4UBhT/edit?gid=1144088727#gid=1144088727"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -63,20 +57,20 @@ export default async function CampionatoPage() {
                 </a>
               </div>
               <RankingTable
-                ranking={masterPlayoffRanking}
+                ranking={masterRanking}
                 title=""
                 categoria="master"
               />
             </div>
 
-            {/* Classifica Open 3x3 – Coppa Primavera */}
+            {/* Classifica Open 3x3 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">
-                  Classifica Open (3×3) — Coppa Primavera A
+                  Classifica Open (3×3) — Girone B
                 </h3>
                 <a
-                  href="https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/edit?gid=190893738#gid=190893738"
+                  href="https://drive.google.com/file/d/1_YV3W9SB6Xv4p-vjLuHUDiEVyQ8WDCxQ/view"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -86,82 +80,35 @@ export default async function CampionatoPage() {
                 </a>
               </div>
               <RankingTable
-                ranking={openCoppaRanking}
+                ranking={openRanking}
                 title=""
                 categoria="open"
               />
             </div>
+
+            {/* Classifica Volley League */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  Classifica Volley League — I Sifoni
+                </h3>
+                <a
+                  href={IVL_CALENDARIO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  Calendario ufficiale IVL
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              <RankingTable
+                ranking={leagueRanking}
+                title=""
+                categoria="league"
+              />
+            </div>
           </div>
-
-          {/* Archivio Fase 1 Master – collassabile */}
-          {masterFase1Ranking.length > 0 && (
-            <details className="mt-6 group">
-              <summary className="flex items-center gap-2 cursor-pointer list-none w-fit">
-                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Campionato Master — Fase 1 (archivio)
-                </span>
-              </summary>
-              <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-muted-foreground">
-                      Classifica Master 4+2 — Fase 1
-                    </h3>
-                    <a
-                      href="https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/edit?gid=1144088727#gid=1144088727"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                    >
-                      Classifica ufficiale UISP
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                  <RankingTable
-                    ranking={masterFase1Ranking}
-                    title=""
-                    categoria="master"
-                  />
-                </div>
-              </div>
-            </details>
-          )}
-
-          {/* Archivio gironi Open – collassabile */}
-          {openGironiRanking.length > 0 && (
-            <details className="mt-6 group">
-              <summary className="flex items-center gap-2 cursor-pointer list-none w-fit">
-                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Fase a Gironi Open (archivio)
-                </span>
-              </summary>
-              <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-muted-foreground">
-                      Classifica Open 3x3 — Fase a Gironi (B)
-                    </h3>
-                    <a
-                      href="https://docs.google.com/spreadsheets/d/17hDPCNtiHUIJ-zQ4FyDCoJFfjy9j5U8g/edit?gid=792185880#gid=792185880"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                    >
-                      Classifica ufficiale UISP
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                  <RankingTable
-                    ranking={openGironiRanking}
-                    title=""
-                    categoria="open"
-                  />
-                </div>
-              </div>
-            </details>
-          )}
         </section>
 
         {/* SEZIONE 2: CALENDARIO */}
@@ -169,8 +116,8 @@ export default async function CampionatoPage() {
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">Calendario Partite PSG</h2>
             <p className="text-muted-foreground">
-              Tutte le partite di ASD Patrocinio San Giuseppe da entrambi i
-              campionati
+              Tutte le partite delle squadre PSG (UISP 4+2, UISP 3×3 e
+              Volley League)
             </p>
           </div>
           <CalendarView events={allEvents} />
@@ -192,24 +139,24 @@ export default async function CampionatoPage() {
           <h3 className="text-lg font-semibold mb-4">Link Utili</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <a
-              href="https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738"
+              href="https://docs.google.com/spreadsheets/d/1sNELIWvG3DkCs9S2wg7vZIwYrUO4UBhT/edit?gid=1144088727#gid=1144088727"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:hover:bg-blue-900 transition-colors"
             >
               <span className="text-sm font-medium">
-                Play Off Master 4+2 Misto UISP
+                Campionato Master 4+2 Misto UISP
               </span>
               <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
             </a>
             <a
-              href="https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/edit?gid=190893738#gid=190893738"
+              href="https://drive.google.com/file/d/1_YV3W9SB6Xv4p-vjLuHUDiEVyQ8WDCxQ/view"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 dark:border-green-800 dark:bg-green-950 dark:hover:bg-green-900 transition-colors"
             >
               <span className="text-sm font-medium">
-                Coppa Primavera Open 3×3 Misto UISP
+                Campionato Open 3×3 Misto UISP
               </span>
               <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
             </a>
@@ -221,6 +168,17 @@ export default async function CampionatoPage() {
             >
               <span className="text-sm font-medium">
                 Regolamento Volley UISP
+              </span>
+              <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
+            </a>
+            <a
+              href={IVL_CALENDARIO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950 dark:hover:bg-purple-900 transition-colors"
+            >
+              <span className="text-sm font-medium">
+                Calendario I Sifoni — Italian Volley League
               </span>
               <ExternalLink className="h-4 w-4 ml-auto shrink-0" />
             </a>

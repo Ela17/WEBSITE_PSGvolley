@@ -49,7 +49,7 @@ export interface DBEvento {
 
 export interface DBMatch {
   id: string;
-  categoria: "master" | "open";
+  categoria: "master" | "open" | "league";
   numero_gara: string;
   data: string;
   ora: string | null;

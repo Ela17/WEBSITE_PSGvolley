@@ -2,7 +2,7 @@
  * Utility functions for calendar component
  */
 
-import { CalendarEvent, parseItalianDate } from "@/lib/campionato-types";
+import { CalendarEvent, parseItalianDate, CATEGORIA_INFO } from "@/lib/campionato-types";
 
 /**
  * Genera link Google Maps dall'indirizzo
@@ -142,8 +142,7 @@ export function generateICS(
     if (!event.data) continue;
     const dtStart = toIcsDateTime(event.data, event.ora);
     const dtEnd = addTwoHours(dtStart);
-    const categLabel =
-      event.categoria === "master" ? "Master 4+2" : "Open 3x3";
+    const categLabel = CATEGORIA_INFO[event.categoria].nome;
     const summary = `${event.squadraA} vs ${event.squadraB} (${categLabel})`;
     const descParts = [`Campionato ${categLabel}`, `Gara #${event.id}`];
     if (event.palestra) descParts.push(`Palestra: ${event.palestra}`);
@@ -180,7 +179,7 @@ export function generateICS(
 export function getGoogleCalendarLink(event: CalendarEvent): string {
   const dtStart = toIcsDateTime(event.data, event.ora);
   const dtEnd = addTwoHours(dtStart);
-  const categLabel = event.categoria === "master" ? "Master 4+2" : "Open 3x3";
+  const categLabel = CATEGORIA_INFO[event.categoria].nome;
   const title = `${event.squadraA} vs ${event.squadraB} (${categLabel})`;
   const descParts = [`Campionato ${categLabel}`, `Gara #${event.id}`];
   if (event.note) descParts.push(`Note: ${event.note}`);

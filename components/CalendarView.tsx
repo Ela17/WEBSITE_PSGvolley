@@ -7,6 +7,9 @@ import {
   getCategoriaLabel,
   formatDateItalian,
   formatTimeItalian,
+  isPSGTeam,
+  CATEGORIA_INFO,
+  type Categoria,
 } from "@/lib/campionato-types";
 import { getGoogleMapsLink, generateICS, downloadICS, getGoogleCalendarLink } from "@/lib/calendar-utils";
 import {
@@ -52,8 +55,8 @@ export default function CalendarView({ events }: CalendarViewProps) {
   // SOLO partite del PSG
   const psgEvents = events.filter(
     (event) =>
-      event.squadraA.includes("ASD Patr. San Giuseppe") ||
-      event.squadraB.includes("ASD Patr. San Giuseppe"),
+      isPSGTeam(event.squadraA) ||
+      isPSGTeam(event.squadraB),
   );
 
   // Crea mappa date -> eventi PSG
@@ -111,7 +114,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
   };
 
   // Export .ics
-  const handleExport = (categoria: "all" | "master" | "open") => {
+  const handleExport = (categoria: "all" | Categoria) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -124,15 +127,9 @@ export default function CalendarView({ events }: CalendarViewProps) {
     const label =
       categoria === "all"
         ? "PSG Volley - Tutte le Partite"
-        : categoria === "master"
-          ? "PSG Volley - Master 4+2"
-          : "PSG Volley - Coppa Primavera Open 3×3";
+        : `PSG Volley - ${CATEGORIA_INFO[categoria].nome}`;
     const filename =
-      categoria === "all"
-        ? "psg-campionato.ics"
-        : categoria === "master"
-          ? "psg-master.ics"
-          : "psg-open.ics";
+      categoria === "all" ? "psg-campionato.ics" : `psg-${categoria}.ics`;
 
     const ics = generateICS(filtered, label);
     downloadICS(ics, filename);
@@ -232,6 +229,9 @@ export default function CalendarView({ events }: CalendarViewProps) {
                   <DropdownMenuItem onClick={() => handleExport("open")}>
                     Solo Open (3×3)
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("league")}>
+                    Solo Volley League
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button variant="outline" size="sm" onClick={goToToday}>
@@ -257,9 +257,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
               </div>
             ) : (
               monthEvents.map((event) => {
-                const opponent = event.squadraA.includes(
-                  "ASD Patr. San Giuseppe",
-                )
+                const opponent = isPSGTeam(event.squadraA)
                   ? event.squadraB
                   : event.squadraA;
                 const eventDate = parseItalianDate(event.data);
@@ -292,12 +290,10 @@ export default function CalendarView({ events }: CalendarViewProps) {
                           </p>
                         </div>
                         <Badge
-                          variant={
-                            event.categoria === "master" ? "master" : "open"
-                          }
+                          variant={event.categoria}
                           className="text-xs"
                         >
-                          {event.categoria === "master" ? "4+2" : "3×3"}
+                          {CATEGORIA_INFO[event.categoria].short}
                         </Badge>
                       </div>
 
@@ -393,15 +389,10 @@ export default function CalendarView({ events }: CalendarViewProps) {
                         {hasEvents && (
                           <div className="space-y-1">
                             {dayEvents.slice(0, 2).map((event) => {
-                              const badgeVariant: "master" | "open" =
-                                event.categoria === "master"
-                                  ? "master"
-                                  : "open";
+                              const badgeVariant: Categoria = event.categoria;
 
                               // Determina avversario
-                              const opponent = event.squadraA.includes(
-                                "ASD Patr. San Giuseppe",
-                              )
+                              const opponent = isPSGTeam(event.squadraA)
                                 ? event.squadraB
                                 : event.squadraA;
 
@@ -512,9 +503,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
             {/* Badge categoria */}
             <div>
               <Badge
-                variant={
-                  selectedEvent.categoria === "master" ? "master" : "open"
-                }
+                variant={selectedEvent.categoria}
               >
                 {getCategoriaLabel(selectedEvent.categoria)}
               </Badge>
@@ -526,9 +515,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                 <span
                   className={cn(
                     "font-bold text-base sm:text-lg",
-                    selectedEvent.squadraA.includes(
-                      "ASD Patr. San Giuseppe"
-                    ) && "text-primary"
+                    isPSGTeam(selectedEvent.squadraA) && "text-primary"
                   )}
                 >
                   {selectedEvent.squadraA}
@@ -539,9 +526,7 @@ export default function CalendarView({ events }: CalendarViewProps) {
                 <span
                   className={cn(
                     "font-bold text-base sm:text-lg",
-                    selectedEvent.squadraB.includes(
-                      "ASD Patr. San Giuseppe"
-                    ) && "text-primary"
+                    isPSGTeam(selectedEvent.squadraB) && "text-primary"
                   )}
                 >
                   {selectedEvent.squadraB}

@@ -1,6 +1,8 @@
 import {
   CalendarEvent,
   getCategoriaLabel,
+  CATEGORIA_INFO,
+  type Categoria,
   formatDateWithWeekday,
   formatTimeItalian,
 } from "@/lib/campionato-types";
@@ -13,7 +15,7 @@ import { getGoogleMapsLink } from "@/lib/calendar-utils";
 interface NextMatchCardProps {
   match: CalendarEvent | null;
   title: string;
-  categoria: "master" | "open";
+  categoria: Categoria;
 }
 
 export default function NextMatchCard({
@@ -36,10 +38,8 @@ export default function NextMatchCard({
     );
   }
 
-  const borderColor =
-    categoria === "master" ? "border-l-blue-500" : "border-l-orange-500";
-  const badgeVariant: "master" | "open" =
-    match.categoria === "master" ? "master" : "open";
+  const borderColor = CATEGORIA_INFO[categoria].border;
+  const badgeVariant: Categoria = match.categoria;
 
   return (
     <Card

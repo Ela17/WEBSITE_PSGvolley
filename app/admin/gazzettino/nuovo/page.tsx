@@ -181,7 +181,7 @@ export default function NuovoArticoloPage() {
                     onChange={(e) =>
                       setForm({ ...form, season: e.target.value })
                     }
-                    placeholder="Es: 2025-26"
+                    placeholder="Es: 2026-27"
                   />
                 </div>
 

@@ -22,10 +22,16 @@ export const revalidate = 0;
 
 export default async function Home() {
   // Carica prossime partite e prossimo evento
-  const [nextMasterMatch, nextOpenMatch, nextEvento, lastEventoPassato] =
-    await Promise.all([
-      getNextMatchAsync("master", "ASD Patr. San Giuseppe"),
-      getNextMatchAsync("open", "ASD Patr. San Giuseppe"),
+  const [
+    nextMasterMatch,
+    nextOpenMatch,
+    nextLeagueMatch,
+    nextEvento,
+    lastEventoPassato,
+  ] = await Promise.all([
+      getNextMatchAsync("master"),
+      getNextMatchAsync("open"),
+      getNextMatchAsync("league"),
       getNextEvento(),
       getLastEventoPassato(),
     ]);
@@ -70,8 +76,8 @@ export default async function Home() {
           <h2 className="text-3xl font-bold mb-4">
             Associazione Sportiva Dilettantistica
           </h2>
-          <p className="text-xl">Campionato UISP Volley Misto 4+2 e 3x3</p>
-          <p className="text-xl">Stagione 2025/26</p>
+          <p className="text-xl">UISP Volley Misto 4+2 e 3×3 · Italian Volley League</p>
+          <p className="text-xl">Stagione 2026/27</p>
         </div>
       </section>
 
@@ -79,7 +85,7 @@ export default async function Home() {
         {/* Prossime Partite */}
         <section>
           <h2 className="text-3xl font-bold mb-6">Prossime Partite</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <NextMatchCard
               match={nextMasterMatch}
               title="Prossima Partita Master"
@@ -89,6 +95,11 @@ export default async function Home() {
               match={nextOpenMatch}
               title="Prossima Partita Open"
               categoria="open"
+            />
+            <NextMatchCard
+              match={nextLeagueMatch}
+              title="Prossima Partita Volley League"
+              categoria="league"
             />
           </div>
         </section>

@@ -20,6 +20,8 @@ const badgeVariants = cva(
         master:
           "border-transparent bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300",
         open: "border-transparent bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-950 dark:text-orange-300",
+        league:
+          "border-transparent bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-950 dark:text-purple-300",
       },
     },
     defaultVariants: {

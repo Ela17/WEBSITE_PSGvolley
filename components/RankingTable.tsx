@@ -1,4 +1,9 @@
-import { Ranking, getCategoriaLabel } from "@/lib/campionato-types";
+import {
+  Ranking,
+  getCategoriaLabel,
+  isPSGTeam,
+  type Categoria,
+} from "@/lib/campionato-types";
 import {
   Card,
   CardContent,
@@ -22,17 +27,18 @@ interface RankingTableProps {
   ranking: Ranking[];
   title: string;
   highlightTeam?: string;
-  categoria: "master" | "open";
+  categoria: Categoria;
 }
 
 export default function RankingTable({
   ranking,
   title,
-  highlightTeam = "ASD Patr. San Giuseppe",
+  highlightTeam,
   categoria,
 }: RankingTableProps) {
-  const badgeVariant: "master" | "open" =
-    categoria === "master" ? "master" : "open";
+  const badgeVariant: Categoria = categoria;
+  const isHighlightedTeam = (name: string) =>
+    highlightTeam ? name.includes(highlightTeam) : isPSGTeam(name);
 
   return (
     <Card>
@@ -71,7 +77,7 @@ export default function RankingTable({
                 </TableRow>
               ) : (
                 ranking.map((team, index) => {
-                  const isHighlighted = team.squadra.includes(highlightTeam);
+                  const isHighlighted = isHighlightedTeam(team.squadra);
 
                   return (
                     <TableRow
@@ -148,7 +154,7 @@ export default function RankingTable({
                 </TableRow>
               ) : (
                 ranking.map((team, index) => {
-                  const isHighlighted = team.squadra.includes(highlightTeam);
+                  const isHighlighted = isHighlightedTeam(team.squadra);
 
                   return (
                     <TableRow

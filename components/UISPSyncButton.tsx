@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import type { Categoria } from "@/lib/campionato-types";
 import {
   RefreshCw,
   Loader2,
@@ -24,7 +25,7 @@ import {
 // Tipi dal modulo uisp-sync
 interface SyncChange {
   numero_gara: string;
-  categoria: "master" | "open";
+  categoria: Categoria;
   partita: string;
   tipo: "nuovo" | "aggiornato" | "invariato";
   modifiche?: string[];
@@ -47,6 +48,13 @@ interface SyncReport {
     invariati: number;
     errori: number;
   };
+  league: {
+    totale: number;
+    nuovi: number;
+    aggiornati: number;
+    invariati: number;
+    errori: number;
+  };
   changes: SyncChange[];
   errors: string[];
 }
@@ -63,7 +71,7 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
   const [report, setReport] = useState<SyncReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<
-    "master" | "open" | null
+    Categoria | null
   >(null);
 
   // Apre dialog e carica preview
@@ -98,6 +106,13 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
         },
         open: {
           totale: data.open?.totale || 0,
+          nuovi: 0,
+          aggiornati: 0,
+          invariati: 0,
+          errori: 0,
+        },
+        league: {
+          totale: data.league?.totale || 0,
           nuovi: 0,
           aggiornati: 0,
           invariati: 0,
@@ -158,7 +173,7 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
   };
 
   // Filtra changes per categoria
-  const getChangesForCategory = (categoria: "master" | "open") => {
+  const getChangesForCategory = (categoria: Categoria) => {
     if (!report?.changes) return { nuovi: [], aggiornati: [] };
     return {
       nuovi: report.changes.filter(
@@ -174,20 +189,20 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
     <>
       <Button variant="outline" onClick={handleOpenDialog} className="gap-2">
         <RefreshCw className="size-4" />
-        Sincronizza da UISP
+        Sincronizza campionati
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RefreshCw className="size-5" />
-              Sincronizzazione UISP
+              Sincronizzazione campionati
             </DialogTitle>
             <DialogDescription>
-              {step === "loading" && "Connessione ai calendari UISP..."}
+              {step === "loading" && "Connessione ai calendari UISP e Volley League..."}
               {step === "preview" &&
-                "Pronto per sincronizzare i dati dai calendari ufficiali UISP"}
+                "Pronto per sincronizzare i dati dai calendari ufficiali UISP e Volley League"}
               {step === "syncing" && "Sincronizzazione in corso..."}
               {step === "done" && "Sincronizzazione completata"}
             </DialogDescription>
@@ -232,13 +247,13 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    I dati verranno scaricati dai calendari ufficiali UISP e
+                    I dati verranno scaricati dai calendari ufficiali UISP e IVL e
                     sincronizzati con il database del sito. Le partite esistenti
                     verranno aggiornate, quelle nuove verranno inserite.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Master */}
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <h4 className="font-semibold text-amber-900 mb-2">
@@ -259,6 +274,16 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
                       {report.open.totale}
                     </p>
                     <p className="text-sm text-emerald-600">partite trovate</p>
+                  </div>
+                  {/* Volley League */}
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-purple-900 mb-2">
+                      Volley League
+                    </h4>
+                    <p className="text-2xl font-bold text-purple-700">
+                      {report.league.totale}
+                    </p>
+                    <p className="text-sm text-purple-600">partite trovate</p>
                   </div>
                 </div>
 
@@ -307,7 +332,7 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
                 </div>
 
                 {/* Statistiche per categoria */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Master */}
                   <div className="border rounded-lg overflow-hidden">
                     <button
@@ -419,6 +444,63 @@ export function UISPSyncButton({ onSyncComplete }: UISPSyncButtonProps) {
                       <div className="p-4 border-t bg-white max-h-60 overflow-y-auto">
                         <CategoryChanges
                           changes={getChangesForCategory("open")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Volley League */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() =>
+                        setExpandedCategory(
+                          expandedCategory === "league" ? null : "league",
+                        )
+                      }
+                      className="w-full bg-purple-50 p-4 flex items-center justify-between hover:bg-purple-100 transition-colors"
+                    >
+                      <div>
+                        <h4 className="font-semibold text-purple-900">
+                          Volley League
+                        </h4>
+                        <div className="flex gap-2 mt-1">
+                          {report.league.nuovi > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-blue-100 text-blue-800"
+                            >
+                              +{report.league.nuovi} nuove
+                            </Badge>
+                          )}
+                          {report.league.aggiornati > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-amber-100 text-amber-800"
+                            >
+                              {report.league.aggiornati} agg.
+                            </Badge>
+                          )}
+                          {report.league.nuovi === 0 &&
+                            report.league.aggiornati === 0 && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-gray-100 text-gray-600"
+                              >
+                                Nessuna modifica
+                              </Badge>
+                            )}
+                        </div>
+                      </div>
+                      {expandedCategory === "league" ? (
+                        <ChevronUp className="size-5 text-purple-600" />
+                      ) : (
+                        <ChevronDown className="size-5 text-purple-600" />
+                      )}
+                    </button>
+
+                    {expandedCategory === "league" && (
+                      <div className="p-4 border-t bg-white max-h-60 overflow-y-auto">
+                        <CategoryChanges
+                          changes={getChangesForCategory("league")}
                         />
                       </div>
                     )}

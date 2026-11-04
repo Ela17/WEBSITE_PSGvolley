@@ -9,6 +9,8 @@
  */
 
 import { createAdminClient } from "./supabase";
+import { fetchIVLMatches } from "./ivl-sync";
+import type { Categoria } from "./campionato-types";
 
 // ============================================
 // CONFIGURAZIONE
@@ -17,17 +19,21 @@ import { createAdminClient } from "./supabase";
 // URL per export CSV da Google Sheets
 // Formato: https://docs.google.com/spreadsheets/d/{ID}/export?format=csv&gid={GID}
 const UISP_SHEETS = {
+  // Stagione 2026/27 — Master 4+2 Misto, girone unico (gare 741xx)
   master: {
-    url: "https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/export?format=csv&gid=190893738",
+    url: "https://docs.google.com/spreadsheets/d/1sNELIWvG3DkCs9S2wg7vZIwYrUO4UBhT/export?format=csv&gid=1144088727",
     categoria: "master" as const,
-    categoryIdentifier: "PO 4+2",
-    maxNumeroGara: 732115,
+    categoryIdentifier: "4+2 MMS" as string | null,
+    garaPrefix: null as string | null,
+    maxNumeroGara: null as number | null,
   },
+  // Stagione 2026/27 — Open 3x3 Misto, girone B (gare 752xxx)
   open: {
-    url: "https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/export?format=csv&gid=190893738",
+    url: "https://docs.google.com/spreadsheets/d/1_YV3W9SB6Xv4p-vjLuHUDiEVyQ8WDCxQ/export?format=csv&gid=792185880",
     categoria: "open" as const,
-    categoryIdentifier: "CPA OPMS",
-    maxNumeroGara: 743330,
+    categoryIdentifier: null as string | null, // null = non controllare la colonna CAT
+    garaPrefix: "752" as string | null,
+    maxNumeroGara: null as number | null,
   },
 };
 
@@ -36,7 +42,7 @@ const UISP_SHEETS = {
 // ============================================
 
 export interface ParsedMatch {
-  categoria: "master" | "open";
+  categoria: Categoria;
   numero_gara: string;
   data: string | null; // YYYY-MM-DD o null se indefinita
   ora: string | null;
@@ -52,7 +58,7 @@ export interface ParsedMatch {
 
 export interface SyncChange {
   numero_gara: string;
-  categoria: "master" | "open";
+  categoria: Categoria;
   partita: string;
   tipo: "nuovo" | "aggiornato" | "invariato";
   modifiche?: string[];
@@ -69,6 +75,13 @@ export interface SyncReport {
     errori: number;
   };
   open: {
+    totale: number;
+    nuovi: number;
+    aggiornati: number;
+    invariati: number;
+    errori: number;
+  };
+  league: {
     totale: number;
     nuovi: number;
     aggiornati: number;
@@ -444,17 +457,25 @@ function parseCSV(csvText: string): string[][] {
 /**
  * Verifica se una riga è valida (non intestazione, non giornata, non riposo)
  */
-function isValidMatchRow(row: string[], categoryIdentifier: string): boolean {
+function isValidMatchRow(
+  row: string[],
+  categoryIdentifier: string | null,
+  garaPrefix: string | null = null,
+): boolean {
   if (row.length < 8) return false;
 
   const category = row[0]?.trim();
 
-  // Deve iniziare con l'identificatore categoria corretto
-  if (category !== categoryIdentifier) return false;
+  // Se configurato, la colonna CAT deve corrispondere
+  if (categoryIdentifier !== null && category !== categoryIdentifier)
+    return false;
 
   // Deve avere un numero gara valido
   const numeroGara = row[1]?.trim();
-  if (!numeroGara || !numeroGara.match(/^\d+/)) return false;
+  if (!numeroGara || !numeroGara.match(/^\d+$/)) return false;
+
+  // Se configurato, il numero gara deve iniziare col prefisso della stagione
+  if (garaPrefix !== null && !numeroGara.startsWith(garaPrefix)) return false;
 
   // Salta righe RIPOSO
   const squadraA = row[4]?.trim() || "";
@@ -468,7 +489,7 @@ function isValidMatchRow(row: string[], categoryIdentifier: string): boolean {
  * Parsa una singola riga CSV in un oggetto ParsedMatch
  *
  * Struttura colonne (0-indexed):
- * 0: Categoria (OPMSB / 4+2)
+ * 0: Categoria (es. "4+2 MMS")
  * 1: Numero Gara
  * 2: Data
  * 3: Ora
@@ -483,7 +504,7 @@ function isValidMatchRow(row: string[], categoryIdentifier: string): boolean {
  */
 function parseMatchRow(
   row: string[],
-  categoria: "master" | "open",
+  categoria: Categoria,
 ): ParsedMatch {
   // Punteggi set
   const punteggiSet: Array<{ pts_a: number; pts_b: number }> = [];
@@ -527,15 +548,16 @@ function parseMatchRow(
  */
 function parseUISPCSV(
   csvText: string,
-  categoria: "master" | "open",
-  categoryIdentifier: string,
+  categoria: Categoria,
+  categoryIdentifier: string | null,
   maxNumeroGara: number | null = null,
+  garaPrefix: string | null = null,
 ): ParsedMatch[] {
   const rows = parseCSV(csvText);
   const matches: ParsedMatch[] = [];
 
   for (const row of rows) {
-    if (isValidMatchRow(row, categoryIdentifier)) {
+    if (isValidMatchRow(row, categoryIdentifier, garaPrefix)) {
       const match = parseMatchRow(row, categoria);
 
       // Filtro per numero gara massimo
@@ -649,8 +671,8 @@ function compareMatches(
 /**
  * Sincronizza le partite di una categoria con il database
  */
-async function syncCategoria(
-  categoria: "master" | "open",
+export async function syncCategoria(
+  categoria: Categoria,
   matches: ParsedMatch[],
 ): Promise<{
   nuovi: number;
@@ -792,11 +814,33 @@ export async function syncFromUISP(): Promise<SyncReport> {
     timestamp: new Date().toISOString(),
     master: { totale: 0, nuovi: 0, aggiornati: 0, invariati: 0, errori: 0 },
     open: { totale: 0, nuovi: 0, aggiornati: 0, invariati: 0, errori: 0 },
+    league: { totale: 0, nuovi: 0, aggiornati: 0, invariati: 0, errori: 0 },
     changes: [],
     errors: [],
   };
 
   try {
+    // === VOLLEY LEAGUE (IVL) ===
+    // Errori IVL non bloccano la sync UISP
+    try {
+      console.log("[Sync] Download partite Volley League (IVL)...");
+      const leagueMatches = await fetchIVLMatches();
+      console.log(`[Sync] Volley League: ${leagueMatches.length} partite trovate`);
+      report.league.totale = leagueMatches.length;
+
+      const leagueResult = await syncCategoria("league", leagueMatches);
+      report.league.nuovi = leagueResult.nuovi;
+      report.league.aggiornati = leagueResult.aggiornati;
+      report.league.invariati = leagueResult.invariati;
+      report.league.errori = leagueResult.errori;
+      report.changes.push(...leagueResult.changes);
+      report.errors.push(...leagueResult.errors);
+    } catch (error) {
+      report.errors.push(
+        `Errore Volley League: ${error instanceof Error ? error.message : "sconosciuto"}`,
+      );
+    }
+
     // === MASTER ===
     console.log("[UISP Sync] Download CSV Master...");
     const masterCSV = await downloadCSV(UISP_SHEETS.master.url);
@@ -805,6 +849,7 @@ export async function syncFromUISP(): Promise<SyncReport> {
       UISP_SHEETS.master.categoria,
       UISP_SHEETS.master.categoryIdentifier,
       UISP_SHEETS.master.maxNumeroGara,
+      UISP_SHEETS.master.garaPrefix,
     );
 
     console.log(`[UISP Sync] Master: ${masterMatches.length} partite trovate`);
@@ -827,6 +872,7 @@ export async function syncFromUISP(): Promise<SyncReport> {
       UISP_SHEETS.open.categoria,
       UISP_SHEETS.open.categoryIdentifier,
       UISP_SHEETS.open.maxNumeroGara,
+      UISP_SHEETS.open.garaPrefix,
     );
     console.log(`[UISP Sync] Open: ${openMatches.length} partite trovate`);
 
@@ -867,11 +913,13 @@ export async function syncFromUISP(): Promise<SyncReport> {
 export async function previewSync(): Promise<{
   master: ParsedMatch[];
   open: ParsedMatch[];
+  league: ParsedMatch[];
   errors: string[];
 }> {
   const errors: string[] = [];
   let master: ParsedMatch[] = [];
   let open: ParsedMatch[] = [];
+  let league: ParsedMatch[] = [];
 
   try {
     const masterCSV = await downloadCSV(UISP_SHEETS.master.url);
@@ -880,6 +928,7 @@ export async function previewSync(): Promise<{
       UISP_SHEETS.master.categoria,
       UISP_SHEETS.master.categoryIdentifier,
       UISP_SHEETS.master.maxNumeroGara,
+      UISP_SHEETS.master.garaPrefix,
     );
   } catch (error) {
     errors.push(
@@ -894,6 +943,7 @@ export async function previewSync(): Promise<{
       UISP_SHEETS.open.categoria,
       UISP_SHEETS.open.categoryIdentifier,
       UISP_SHEETS.open.maxNumeroGara,
+      UISP_SHEETS.open.garaPrefix,
     );
   } catch (error) {
     errors.push(
@@ -901,5 +951,13 @@ export async function previewSync(): Promise<{
     );
   }
 
-  return { master, open, errors };
+  try {
+    league = await fetchIVLMatches();
+  } catch (error) {
+    errors.push(
+      `Errore download Volley League: ${error instanceof Error ? error.message : "sconosciuto"}`,
+    );
+  }
+
+  return { master, open, league, errors };
 }
