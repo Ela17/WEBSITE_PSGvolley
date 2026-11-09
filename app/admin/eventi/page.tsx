@@ -154,8 +154,8 @@ export default function AdminEventiPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -164,13 +164,13 @@ export default function AdminEventiPage() {
               </Link>
               <div className="flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-green-600" />
-                <h1 className="text-2xl font-bold">Gestione Eventi</h1>
+                <h1 className="text-xl sm:text-2xl font-bold">Gestione Eventi</h1>
               </div>
             </div>
             <Link href="/admin/eventi/nuovo">
               <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Nuovo Evento
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nuovo Evento</span>
               </Button>
             </Link>
           </div>
@@ -207,10 +207,10 @@ export default function AdminEventiPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Titolo</TableHead>
-                    <TableHead>Tipo</TableHead>
+                    <TableHead className="hidden md:table-cell">Tipo</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Luogo</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead className="hidden md:table-cell">Luogo</TableHead>
+                    <TableHead className="hidden sm:table-cell">Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -223,7 +223,7 @@ export default function AdminEventiPage() {
                     return (
                       <TableRow key={evento.id}>
                         <TableCell>
-                          <div className="max-w-xs">
+                          <div className="max-w-[120px] sm:max-w-xs">
                             <p className="font-medium truncate">
                               {evento.title}
                             </p>
@@ -232,28 +232,29 @@ export default function AdminEventiPage() {
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Badge className={`${config.color} text-white`}>
                             <Icon className="w-3 h-3 mr-1" />
                             {config.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatDate(evento.date)}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs sm:text-sm">{formatDate(evento.date)}</TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <span className="text-sm text-muted-foreground truncate block max-w-[150px]">
                             {evento.location || "-"}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Badge variant={past ? "secondary" : "default"}>
                             {past ? "Passato" : "Futuro"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-0 sm:gap-2">
                             <Link
                               href={`/eventi/${evento.slug}`}
                               target="_blank"
+                              className="hidden sm:block"
                             >
                               <Button
                                 variant="ghost"

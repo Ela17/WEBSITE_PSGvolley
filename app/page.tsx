@@ -113,13 +113,13 @@ export default async function Home() {
 
           return (
             <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <h2 className="text-2xl sm:text-3xl font-bold">
                   {isFuturo ? "Prossimo Evento" : "Ultimo Evento"}
                 </h2>
                 <Link
                   href="/eventi"
-                  className="flex items-center gap-1 text-blue-600 hover:underline text-sm font-medium"
+                  className="flex shrink-0 items-center gap-1 text-blue-600 hover:underline text-sm font-medium"
                 >
                   Vedi tutti gli eventi
                   <ArrowRight className="w-4 h-4" />

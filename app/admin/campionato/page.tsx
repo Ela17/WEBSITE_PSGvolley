@@ -383,38 +383,38 @@ export default function AdminCampionatoPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-24">N° Gara</TableHead>
+                  <TableHead className="w-24 hidden sm:table-cell">N° Gara</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Squadra A</TableHead>
-                  <TableHead className="text-center w-16">vs</TableHead>
+                  <TableHead className="text-center w-16 hidden sm:table-cell">vs</TableHead>
                   <TableHead>Squadra B</TableHead>
-                  <TableHead>Ora</TableHead>
+                  <TableHead className="hidden sm:table-cell">Ora</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedUpcoming.slice(0, 20).map((match) => (
                   <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm font-medium">
+                    <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
                       {match.numero_gara}
                     </TableCell>
-                    <TableCell>{formatDate(match.data)}</TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="text-xs sm:text-sm">{formatDate(match.data)}</TableCell>
+                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
                       {match.squadra_a
                         .replace("ASD ", "")
                         .replace("Patr.", "P.")}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground hidden sm:table-cell">
                       -
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
                       {match.squadra_b
                         .replace("ASD ", "")
                         .replace("Patr.", "P.")}
                     </TableCell>
-                    <TableCell>{match.ora || "-"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{match.ora || "-"}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-0 sm:gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -464,7 +464,7 @@ export default function AdminCampionatoPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-24">N° Gara</TableHead>
+                  <TableHead className="w-24 hidden sm:table-cell">N° Gara</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Squadra A</TableHead>
                   <TableHead className="text-center">Risultato</TableHead>
@@ -475,11 +475,11 @@ export default function AdminCampionatoPage() {
               <TableBody>
                 {sortedPlayed.map((match) => (
                   <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm font-medium">
+                    <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
                       {match.numero_gara}
                     </TableCell>
-                    <TableCell>{formatDate(match.data)}</TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="text-xs sm:text-sm">{formatDate(match.data)}</TableCell>
+                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
                       {match.squadra_a
                         .replace("ASD ", "")
                         .replace("Patr.", "P.")}
@@ -489,13 +489,13 @@ export default function AdminCampionatoPage() {
                         {match.set_a_vinti} - {match.set_b_vinti}
                       </span>
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
                       {match.squadra_b
                         .replace("ASD ", "")
                         .replace("Patr.", "P.")}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-0 sm:gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -529,7 +529,7 @@ export default function AdminCampionatoPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/admin">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -538,7 +538,7 @@ export default function AdminCampionatoPage() {
             </Link>
             <div className="flex items-center gap-2">
               <Trophy className="w-6 h-6 text-orange-600" />
-              <h1 className="text-2xl font-bold">Gestione Campionato</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">Gestione Campionato</h1>
             </div>
           </div>
         </div>
@@ -558,7 +558,7 @@ export default function AdminCampionatoPage() {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <CardTitle>
                   Partite Campionato ({matches.length} totali)
                 </CardTitle>
@@ -592,9 +592,11 @@ export default function AdminCampionatoPage() {
               </div>
             ) : (
               <Tabs defaultValue="master">
-                <TabsList className="mb-6">
+                <TabsList className="mb-6 w-full sm:w-auto">
                   <TabsTrigger value="master">
-                    MASTER 4+2 ({filteredMasterMatches.length}
+                    <span className="sm:hidden">4+2</span>
+                    <span className="hidden sm:inline">MASTER 4+2</span>&nbsp;(
+                    {filteredMasterMatches.length}
                     {searchQuery &&
                     filteredMasterMatches.length !== masterMatches.length
                       ? ` / ${masterMatches.length}`
@@ -602,7 +604,9 @@ export default function AdminCampionatoPage() {
                     )
                   </TabsTrigger>
                   <TabsTrigger value="open">
-                    OPEN 3×3 ({filteredOpenMatches.length}
+                    <span className="sm:hidden">3×3</span>
+                    <span className="hidden sm:inline">OPEN 3×3</span>&nbsp;(
+                    {filteredOpenMatches.length}
                     {searchQuery &&
                     filteredOpenMatches.length !== openMatches.length
                       ? ` / ${openMatches.length}`
@@ -610,7 +614,9 @@ export default function AdminCampionatoPage() {
                     )
                   </TabsTrigger>
                   <TabsTrigger value="league">
-                    VOLLEY LEAGUE ({filteredLeagueMatches.length}
+                    <span className="sm:hidden">IVL</span>
+                    <span className="hidden sm:inline">VOLLEY LEAGUE</span>&nbsp;(
+                    {filteredLeagueMatches.length}
                     {searchQuery &&
                     filteredLeagueMatches.length !== leagueMatches.length
                       ? ` / ${leagueMatches.length}`

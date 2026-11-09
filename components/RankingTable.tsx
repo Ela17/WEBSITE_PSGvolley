@@ -90,7 +90,7 @@ export default function RankingTable({
                       <TableCell className="font-medium text-muted-foreground text-sm">
                         {index + 1}
                       </TableCell>
-                      <TableCell className="font-medium text-sm">
+                      <TableCell className="font-medium text-sm whitespace-normal break-words">
                         <div className="flex flex-col gap-0.5">
                           <span>{team.squadra}</span>
                           {isHighlighted && (

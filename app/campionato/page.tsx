@@ -42,7 +42,7 @@ export default async function CampionatoPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Classifica Master 4+2 */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-lg font-semibold">
                   Classifica Master (4+2) — Girone Unico
                 </h3>
@@ -65,7 +65,7 @@ export default async function CampionatoPage() {
 
             {/* Classifica Open 3x3 */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-lg font-semibold">
                   Classifica Open (3×3) — Girone B
                 </h3>
@@ -88,7 +88,7 @@ export default async function CampionatoPage() {
 
             {/* Classifica Volley League */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-lg font-semibold">
                   Classifica Volley League — I Sifoni
                 </h3>

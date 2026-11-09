@@ -102,12 +102,12 @@ export default function TeamSearch({ events }: TeamSearchProps) {
 
         {/* Toggle categoria - visibile solo con ricerca attiva */}
         {hasSearch && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full sm:w-auto items-center gap-2">
             <Button
               variant={categoriaFilter === "all" ? "default" : "outline"}
               size="sm"
               onClick={() => setCategoriaFilter("all")}
-              className="min-w-[80px]"
+              className="flex-1 min-w-0 sm:flex-none sm:min-w-[80px]"
             >
               Tutte
             </Button>
@@ -115,7 +115,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
               variant={categoriaFilter === "master" ? "default" : "outline"}
               size="sm"
               onClick={() => setCategoriaFilter("master")}
-              className="min-w-[80px]"
+              className="flex-1 min-w-0 sm:flex-none sm:min-w-[80px]"
             >
               4+2
             </Button>
@@ -123,7 +123,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
               variant={categoriaFilter === "open" ? "default" : "outline"}
               size="sm"
               onClick={() => setCategoriaFilter("open")}
-              className="min-w-[80px]"
+              className="flex-1 min-w-0 sm:flex-none sm:min-w-[80px]"
             >
               3×3
             </Button>
@@ -131,7 +131,7 @@ export default function TeamSearch({ events }: TeamSearchProps) {
               variant={categoriaFilter === "league" ? "default" : "outline"}
               size="sm"
               onClick={() => setCategoriaFilter("league")}
-              className="min-w-[80px]"
+              className="flex-1 min-w-0 sm:flex-none sm:min-w-[80px]"
             >
               IVL
             </Button>
