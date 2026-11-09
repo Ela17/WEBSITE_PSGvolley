@@ -505,27 +505,39 @@ function isValidMatchRow(
 function parseMatchRow(
   row: string[],
   categoria: Categoria,
+  layout: ColumnLayout = DEFAULT_LAYOUT,
 ): ParsedMatch {
-  // Punteggi set
+  // Risultato (set vinti)
+  let setA = parseIntOrNull(row[layout.risultato]);
+  let setB = parseIntOrNull(row[layout.risultato + 1]);
+
+  // Partita non giocata: il foglio può avere celle vuote oppure "0 - 0"
+  const giocata = setA !== null && setB !== null && setA + setB > 0;
+  if (!giocata) {
+    setA = null;
+    setB = null;
+  }
+
+  // Punteggi set (solo se la partita è stata giocata)
   const punteggiSet: Array<{ pts_a: number; pts_b: number }> = [];
 
-  for (let i = 0; i < 5; i++) {
-    const ptsAIndex = 11 + i * 2;
-    const ptsBIndex = 12 + i * 2;
+  if (giocata) {
+    for (let i = 0; i < 5; i++) {
+      const ptsA = parseIntOrNull(row[layout.primoSet + i * 2]);
+      const ptsB = parseIntOrNull(row[layout.primoSet + i * 2 + 1]);
 
-    const ptsA = parseIntOrNull(row[ptsAIndex]);
-    const ptsB = parseIntOrNull(row[ptsBIndex]);
-
-    // Aggiungi solo set con almeno un punteggio
-    if (ptsA !== null || ptsB !== null) {
-      punteggiSet.push({
-        pts_a: ptsA ?? 0,
-        pts_b: ptsB ?? 0,
-      });
+      // Aggiungi solo set effettivamente giocati (salta vuoti e 0-0)
+      if ((ptsA ?? 0) > 0 || (ptsB ?? 0) > 0) {
+        punteggiSet.push({
+          pts_a: ptsA ?? 0,
+          pts_b: ptsB ?? 0,
+        });
+      }
     }
   }
 
   const palestraRaw = row[7]?.trim() || null;
+  const noteRaw = row[8]?.trim() || "";
 
   return {
     categoria,
@@ -536,17 +548,45 @@ function parseMatchRow(
     squadra_b: row[6]?.trim() || "",
     palestra: palestraRaw,
     indirizzo_maps: cleanPalestra(palestraRaw),
-    note: row[8]?.trim() || null,
-    set_a_vinti: parseIntOrNull(row[9]),
-    set_b_vinti: parseIntOrNull(row[10]),
+    note: noteRaw && noteRaw !== "0" ? noteRaw : null,
+    set_a_vinti: setA,
+    set_b_vinti: setB,
     punteggi_set: punteggiSet,
+  };
+}
+
+/**
+ * Posizione delle colonne risultato nel foglio UISP.
+ * Cambia tra i fogli: Open 26/27 ha "Risultato" in colonna 9, Master 26/27
+ * ha una colonna vuota in più dopo NOTE e quindi "Risultato" in colonna 10.
+ * Viene ricavata dalla riga di intestazione ("CAT, N. Gara, ..., Risultato, , 1° SET, ...").
+ */
+interface ColumnLayout {
+  risultato: number; // set vinti squadra A (B = colonna successiva)
+  primoSet: number; // punti 1° set squadra A (poi B, 2° set A, ...)
+}
+
+// Formato fogli UISP 2026/27 (Master e Open): CAT, N.Gara, Data, Ora, Squadra A,
+// -, Squadra B, Palestra, Note, (vuota), Risultato A, Risultato B, 1° set A, 1° set B, ...
+const DEFAULT_LAYOUT: ColumnLayout = { risultato: 10, primoSet: 12 };
+
+function detectLayout(row: string[]): ColumnLayout | null {
+  // Riga di intestazione: contiene "N. Gara" / "N° GARA" e "Risultato" (qualsiasi maiuscolo)
+  const cells = row.map((c) => (c || "").trim());
+  if (!cells.some((c) => /gara/i.test(c))) return null;
+  const risultato = cells.findIndex((c) => /^risultat/i.test(c));
+  const primoSet = cells.findIndex((c) => /^1\s*°?\s*set/i.test(c));
+  if (risultato < 0) return null;
+  return {
+    risultato,
+    primoSet: primoSet >= 0 ? primoSet : risultato + 2,
   };
 }
 
 /**
  * Parsa tutto il CSV e restituisce le partite valide
  */
-function parseUISPCSV(
+export function parseUISPCSV(
   csvText: string,
   categoria: Categoria,
   categoryIdentifier: string | null,
@@ -556,9 +596,18 @@ function parseUISPCSV(
   const rows = parseCSV(csvText);
   const matches: ParsedMatch[] = [];
 
+  let layout: ColumnLayout = DEFAULT_LAYOUT;
+
   for (const row of rows) {
+    // Riga di intestazione: aggiorna la posizione delle colonne
+    const detected = detectLayout(row);
+    if (detected) {
+      layout = detected;
+      continue;
+    }
+
     if (isValidMatchRow(row, categoryIdentifier, garaPrefix)) {
-      const match = parseMatchRow(row, categoria);
+      const match = parseMatchRow(row, categoria, layout);
 
       // Filtro per numero gara massimo
       if (maxNumeroGara !== null) {
