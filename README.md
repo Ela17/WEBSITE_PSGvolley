@@ -2,7 +2,9 @@
 
 Sito web della **sezione pallavolo** dell'Associazione Sportiva Dilettantistica Patrocinio San Giuseppe.
 
-Le nostre squadre di pallavolo mista competono nei campionati UISP di Torino nelle categorie **MASTER 4+2** e **OPEN 3×3**.
+Le nostre squadre di pallavolo mista competono nei campionati UISP di Torino nelle categorie **MASTER 4+2** e **OPEN 3×3**, e nell'**Italian Volley League** (Misto Classic) con la squadra **I Sifoni**.
+
+**Stagione corrente: 2026/27**
 
 🌐 **Sito Live**: [https://asd-psg-volley.vercel.app](https://asd-psg-volley.vercel.app)
 
@@ -15,6 +17,7 @@ Le nostre squadre di pallavolo mista competono nei campionati UISP di Torino nel
 - [Struttura del Progetto](#-struttura-del-progetto)
 - [Installazione e Sviluppo](#-installazione-e-sviluppo)
 - [Gestione dei Contenuti](#-gestione-dei-contenuti)
+- [Cambio Stagione](#-cambio-stagione)
 - [Sistema Admin](#-sistema-admin)
 - [Deployment](#-deployment)
 - [Roadmap](#-roadmap)
@@ -27,7 +30,7 @@ Questo progetto fornisce alla sezione pallavolo del PSG una presenza web funzion
 ### Obiettivi del Progetto
 
 - **Informazione**: Classifiche, risultati e calendario partite aggiornati automaticamente
-- **Comunicazione**: "Il Gazzettino" - magazine digitale con cronache e valutazioni
+- **Comunicazione**: "Il Gazzettino" - magazine digitale con cronache e valutazioni (_sezione nascosta dalla stagione 2026/27, riattivabile_)
 - **Engagement**: Sistema eventi per tornei, amichevoli e attività sociali
 - **Gestione**: Admin panel completo per aggiornamenti senza rebuild
 - **Portfolio**: Dimostrazione di competenze in sviluppo web moderno
@@ -47,22 +50,43 @@ Il progetto è stato **completamente migrato** da un'architettura file-based a d
 
 ### 🏆 Gestione Campionati
 
-- **Classifiche in tempo reale** calcolate automaticamente dai risultati
-- **Calendario mensile interattivo** con vista desktop e mobile ottimizzata
-- **Ricerca partite** con filtri per squadra e categoria (4+2/3×3)
-- **Sincronizzazione automatica UISP** da Google Sheets ufficiali
+Tre campionati gestiti in parallelo:
+
+| Categoria (`matches.categoria`) | Campionato                           | Squadra PSG                 | Fonte dati                        |
+| ------------------------------- | ------------------------------------ | --------------------------- | --------------------------------- |
+| `master`                        | UISP Master 4+2 Misto, girone unico  | ASD Patrocinio San Giuseppe | Google Sheet UISP (CSV)           |
+| `open`                          | UISP Open 3×3 Misto, girone B        | ASD Patrocinio San Giuseppe | Google Sheet UISP (CSV)           |
+| `league`                        | Italian Volley League, Misto Classic | I Sifoni                    | API JSON pubblica `ivl.usacli.it` |
+
+- **Classifiche in tempo reale** calcolate automaticamente dai risultati, con le regole di spareggio di ciascun campionato
+- **Calendario mensile interattivo** con le partite di tutte le squadre PSG
+- **Prossima partita** di ogni squadra in homepage
+- **Ricerca partite** con filtri per squadra e categoria (4+2 / 3×3 / IVL)
+- **Sincronizzazione automatica** da UISP e Volley League con un click
 - **Dettagli completi** per ogni partita (orari, palestre, risultati, punteggi set)
 - **Google Maps integration** per indicazioni stradali
-- **Link a classifiche ufficiali** UISP e regolamenti
+- **Export calendario** `.ics` e link Google Calendar
+- **Link a classifiche ufficiali** UISP, calendario IVL e regolamenti
+
+**Classifiche e spareggi** (`lib/campionato.ts` → `calculateRanking`):
+
+- Punti: 3-0 / 3-1 → 3 punti alla vincente; 3-2 → 2 alla vincente e 1 alla perdente (uguale per UISP e IVL)
+- **UISP** (Master, Open): a parità di punti → quoziente set → quoziente punti
+- **Volley League** (regolamento IVL Piemonte Open 26/27, art. 10): a parità di punti → partite vinte → quoziente set → quoziente punti → scontri diretti
+- Volley League: viene mostrato solo il girone più recente (es. dopo le qualificazioni passa da solo al nuovo girone)
+
+**Squadre PSG** (`lib/campionato-types.ts` → `PSG_TEAM_BY_CATEGORIA`, `isPSGTeam`): le squadre vengono riconosciute per sottostringa (`"San Giuseppe"` per UISP, `"Sifoni"` per IVL), così funzionano anche se il nome nei fogli cambia leggermente tra stagioni.
 
 **Feature highlight**: TeamSearch component con:
 
 - Ricerca real-time per nome squadra
-- Toggle categoria opzionale (Tutte / 4+2 / 3×3)
+- Toggle categoria opzionale (Tutte / 4+2 / 3×3 / IVL)
 - Risultati mostrati solo durante la ricerca attiva
-- Badge categoria colorati (blu Master, verde Open)
+- Badge categoria colorati (blu Master, arancio Open, viola Volley League)
 
 ### 📰 Il Gazzettino PSG
+
+> **Attualmente nascosto** (stagione 2026/27): menu, pagine pubbliche e card admin sono disattivati tramite `FEATURES.gazzettino = false` in `lib/features.ts`. Il codice e le tabelle restano: per riattivarlo basta mettere `true` e fare deploy.
 
 Magazine digitale con:
 
@@ -85,31 +109,46 @@ Magazine digitale con:
 Sistema di gestione contenuti con:
 
 - **Autenticazione sicura** (iron-session + bcrypt)
-- **CRUD Gazzettino**: Editor WYSIWYG con Tiptap
+- **CRUD Gazzettino**: Editor WYSIWYG con Tiptap (_nascosto, vedi sopra_)
 - **CRUD Eventi**: Gestione completa con upload immagini
 - **Gestione Campionato**:
   - Inserimento/modifica risultati partite
   - Modifica date, orari e palestre
   - Punteggi set dettagliati
-  - **Sincronizzazione UISP** con un click
+  - **Sincronizzazione UISP + Volley League** con un click
 - **Upload immagini** drag & drop su Supabase Storage
-- **Responsive** e mobile-friendly
+- **Responsive**: su telefono partite ed eventi sono mostrati come schede al posto delle tabelle
 
-### 📊 UISP Sync System
+### 📊 Sync Campionati (UISP + Volley League)
 
-Sistema automatico di sincronizzazione dati:
+Sistema automatico di sincronizzazione dati, eseguibile dall'admin panel:
 
-- Download CSV da Google Sheets pubblici UISP
-- Parsing intelligente con gestione inconsistenze
-- Confronto intelligente dei dati (evita duplicati)
-- Report dettagliato modifiche (nuovi/aggiornati/invariati)
-- Preserva dati inseriti manualmente
-- Eseguibile da admin panel con feedback real-time
+**UISP** (`lib/uisp-sync.ts`):
+
+- Download CSV dai Google Sheets pubblici UISP (export `?format=csv&gid=...`)
+- Le colonne di risultato e parziali vengono **ricavate dalla riga di intestazione** ("N. Gara", "Risultato", "1° SET"), quindi il parser regge anche se la UISP aggiunge o sposta colonne; senza intestazione usa il formato 26/27
+- Partite con risultato `0 - 0` o celle vuote = **non giocate**
+- Gestione date italiane/inglesi (`mer 04/11/26`, `Wed 04 /11/ 26`), orari `ore 21.30`, righe `RIPOSO`
+- Filtri per categoria (colonna CAT) e per prefisso numero gara
+
+**Volley League** (`lib/ivl-sync.ts`):
+
+- Usa l'API JSON pubblica di `ivl.usacli.it` (`/PartiteData`), la stessa del calendario del sito IVL
+- Parte dalle partite della squadra (`squadraId`), ricava i gironi in cui gioca e scarica tutte le partite di quei gironi
+- Gestisce rinvii (data e palestra di rinvio) e note partita
+- `numero_gara` = `<girone_id>-<id partita>` (serve alla classifica per filtrare il girone più recente)
+- Un errore IVL non blocca la sync UISP (e viceversa per i report)
+
+**Comune**:
+
+- Confronto con il DB: inserisce solo le nuove e aggiorna solo quelle cambiate
+- Report dettagliato (nuove / aggiornate / invariate) per categoria
 
 ### 📱 Design & UX
 
 - **Fully responsive** (desktop, tablet, mobile)
-- Tabelle adattive con visualizzazioni ottimizzate
+- Tabelle adattive: su mobile classifiche ridotte (Pt, PG, PV) e schede al posto delle tabelle nell'admin
+- Nessuno scorrimento orizzontale delle pagine su telefono
 - Navigazione intuitiva con breadcrumbs
 - Componenti accessibili (shadcn/ui + Radix)
 - Scroll-to-top button animato (🚀)
@@ -204,9 +243,9 @@ CREATE TABLE eventi (
 -- Partite Campionato
 CREATE TABLE matches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  categoria TEXT NOT NULL CHECK (categoria IN ('master', 'open')),
-  numero_gara TEXT NOT NULL,
-  data DATE NOT NULL,
+  categoria TEXT NOT NULL CHECK (categoria IN ('master', 'open', 'league')),
+  numero_gara TEXT NOT NULL,          -- UISP: "74101" / "752101"; IVL: "818-36221"
+  data DATE,                          -- NULL = data da definire (partita rinviata)
   ora TEXT,
   squadra_a TEXT NOT NULL,
   squadra_b TEXT NOT NULL,
@@ -226,7 +265,7 @@ CREATE TABLE matches (
 
 Bucket: `psg-volley-images`
 
-- **Cartelle organizzate**: `/gazzettino`, `/eventi`, `/eventi-gallery`
+- **Cartelle organizzate**: `/eventi`, `/eventi-gallery` (`/gazzettino` svuotata con la pulizia stagione 2025/26)
 - **Upload gestito**: Via admin panel con drag & drop
 - **URL pubblici**: Generati automaticamente
 - **File naming**: Timestamp + nome sanitizzato
@@ -267,8 +306,8 @@ psg-volley/
 │       │   ├── gazzettino/
 │       │   ├── eventi/
 │       │   ├── campionato/
-│       │   ├── upload/          # Upload Supabase Storage
-│       │   └── uisp-sync/       # Sincronizzazione UISP
+│       │   │   └── sync/        # Sincronizzazione UISP + Volley League
+│       │   └── upload/          # Upload Supabase Storage
 │       └── [...]/
 ├── components/                   # Componenti React
 │   ├── ui/                      # shadcn/ui components
@@ -280,18 +319,21 @@ psg-volley/
 │   ├── NextMatchCard.tsx        # Card prossima partita
 │   ├── ImagesCarousel.tsx       # Carosello fullscreen
 │   ├── WysiwygEditor.tsx        # Editor WYSIWYG
-│   ├── UISPSyncButton.tsx       # Button sync UISP
+│   ├── UISPSyncButton.tsx       # Button "Sincronizza campionati" + report
 │   ├── ImageUploader.tsx        # Upload drag & drop
 │   ├── ScrollToTop.tsx          # Scroll-to-top button
 │   └── Breadcrumbs.tsx          # Breadcrumbs navigazione
 ├── lib/                          # Utilities e logica business
 │   ├── supabase.ts              # Client Supabase (public + admin)
-│   ├── campionato.ts            # Gestione dati campionati
-│   ├── campionato-types.ts      # TypeScript types
+│   ├── campionato.ts            # Gestione dati campionati e classifiche
+│   ├── campionato-types.ts      # Types, categorie (CATEGORIA_INFO), squadre PSG
 │   ├── gazzettino.ts            # Gestione Gazzettino
 │   ├── eventi.ts                # Gestione Eventi
 │   ├── calendar-utils.ts        # Utility calendario
-│   ├── uisp-sync.ts             # Sistema sincronizzazione UISP
+│   ├── uisp-sync.ts             # Sincronizzazione UISP (+ orchestrazione sync)
+│   ├── ivl-sync.ts              # Sincronizzazione Italian Volley League
+│   ├── features.ts              # Interruttori sezioni (es. Gazzettino)
+│   ├── social.ts                # Link Instagram e Facebook
 │   ├── session.ts               # Gestione sessioni admin
 │   ├── env.ts                   # Env variables validation
 │   └── utils.ts                 # Utility generali (cn, etc)
@@ -391,26 +433,45 @@ npm run migrate:all          # Migra tutto
 
 1. Accedi: `/admin/login`
 2. Usa gli editor per:
-   - **Gazzettino**: Crea/modifica articoli con Tiptap editor
    - **Eventi**: Gestisci eventi con upload immagini
-   - **Campionato**: Inserisci risultati e sincronizza UISP
+   - **Campionato**: Inserisci risultati e sincronizza i campionati
 
-### Sincronizzazione UISP
-
-Il sistema sync automatizza l'import dai Google Sheets ufficiali UISP:
+### Sincronizzazione Campionati
 
 1. Vai in `/admin/campionato`
-2. Click su "Sincronizza UISP"
-3. Il sistema:
-   - Scarica CSV da Google Sheets
-   - Confronta con DB esistente
-   - Aggiorna solo le modifiche
-   - Mostra report dettagliato
+2. Click su **"Sincronizza campionati"**
+3. Il sistema scarica i dati da UISP (Master, Open) e Volley League, li confronta con il DB e mostra il report per categoria
 
-**Configurazione** (`lib/uisp-sync.ts`):
+Consigliato: una volta a settimana o dopo ogni giornata. Il DB è unico per locale e produzione, quindi una sync fatta in locale vale anche per il sito online.
 
-- **Master 4+2**: Tutte le partite
-- **Open 3×3**: Limitato a giornata 13 (742191)
+**Configurazione attuale (2026/27)**:
+
+| Categoria | Dove                                       | Valori                                                                               |
+| --------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Master    | `UISP_SHEETS.master` in `lib/uisp-sync.ts` | foglio `1sNELIWvG3DkCs9S2wg7vZIwYrUO4UBhT`, gid `1144088727`, CAT `4+2 MMS`          |
+| Open      | `UISP_SHEETS.open` in `lib/uisp-sync.ts`   | foglio `1_YV3W9SB6Xv4p-vjLuHUDiEVyQ8WDCxQ`, gid `792185880`, gare `752xxx`           |
+| League    | `IVL_CONFIG` in `lib/ivl-sync.ts`          | territorio `1` (Piemonte), squadra `1200` (I Sifoni), stagione 01/09/2026–31/08/2027 |
+
+## 🔄 Cambio Stagione
+
+Checklist da seguire a inizio stagione (o quando cambia fase, es. playoff):
+
+1. **Nuovi fogli UISP**: in `lib/uisp-sync.ts` aggiorna `UISP_SHEETS` (ID foglio + `gid`, `categoryIdentifier` = valore della colonna CAT, `garaPrefix` = prefisso dei numeri gara oppure `null`).
+   - Il `gid` si trova aprendo il file con **Apri con → Fogli Google** e leggendo `#gid=...` nell'URL.
+   - Verifica col terminale che il CSV arrivi:
+     ```bash
+     curl -sL "https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<GID>" | head -5
+     ```
+   - Attenzione al `garaPrefix`: deve coprire **tutti** i numeri gara (es. il Master 26/27 va da 74101 a 74232, quindi un prefisso `741` ne taglierebbe una parte).
+2. **Link pubblici**: aggiorna i link ai fogli in `app/campionato/page.tsx` (classifiche e "Link Utili").
+3. **Volley League**: in `lib/ivl-sync.ts` aggiorna `inizioStagione` / `fineStagione` (e `squadraId` se cambia squadra). I cambi di girone durante la stagione sono automatici.
+4. **Testi**: "Stagione XXXX/YY" in `app/page.tsx` e placeholder stagione nell'admin.
+5. **Database** (Supabase → SQL Editor), **dopo il backup CSV** della tabella:
+   ```sql
+   DELETE FROM matches;  -- svuota le partite della stagione precedente
+   ```
+6. **Sync**: lancia "Sincronizza campionati" e controlla che i totali corrispondano ai fogli ufficiali.
+7. **Nome squadra**: se nei fogli il nome PSG non contiene più "San Giuseppe" (o "Sifoni" per IVL), aggiorna `PSG_TEAM_BY_CATEGORIA` in `lib/campionato-types.ts`.
 
 ### File Backup (Legacy)
 
@@ -430,7 +491,7 @@ I file markdown in `content/` sono mantenuti come backup:
 - Quick actions
 - Link rapidi alle sezioni
 
-**Gazzettino** (`/admin/gazzettino`):
+**Gazzettino** (`/admin/gazzettino`, _nascosto dalla dashboard, vedi `lib/features.ts`_):
 
 - Lista articoli con search
 - Crea/Modifica/Elimina
@@ -444,18 +505,19 @@ I file markdown in `content/` sono mantenuti come backup:
 
 **Eventi** (`/admin/eventi`):
 
-- Lista eventi
+- Lista eventi (tabella su desktop, schede su mobile)
 - Upload cover e gallery immagini
 - Gestione info registrazione
 - Link Google Drive
 
 **Campionato** (`/admin/campionato`):
 
-- Lista partite con filtri
+- Tab per categoria: Master 4+2, Open 3×3, Volley League
+- Lista partite (tabella su desktop, schede su mobile)
 - Ricerca per squadra/numero gara
 - Inserimento risultati con punteggi set
 - Modifica date/orari/palestre
-- **UISP Sync** con report dettagliato
+- **Sync UISP + Volley League** con report dettagliato
 
 ### Upload Immagini
 
@@ -509,6 +571,11 @@ ADMIN_PASSWORD_HASH_BASE64
 - ✅ Upload immagini su Supabase Storage
 - ✅ Responsive design mobile-first
 - ✅ Calendario interattivo con Google Maps
+- ✅ Stagione 2026/27: nuovi fogli UISP, parser robusto alle colonne
+- ✅ Integrazione Italian Volley League (I Sifoni) con spareggi IVL
+- ✅ Feature flag per sezioni (Gazzettino nascosto)
+- ✅ Link Facebook in footer e Chi Siamo
+- ✅ Layout mobile senza scorrimento orizzontale, schede nell'admin
 
 ### In Sviluppo 🚧
 
@@ -544,12 +611,12 @@ Sezione Pallavolo - ASD Patrocinio San Giuseppe, Torino
 
 - 🌐 **Sito Web**: [https://asd-psg-volley.vercel.app](https://asd-psg-volley.vercel.app)
 - 📱 **Instagram**: [@asd_patrociniosgiuseppe](https://www.instagram.com/asd_patrociniosgiuseppe/)
+- 📘 **Facebook**: [Pagina Facebook](https://www.facebook.com/share/1CLBsPhy7s/)
 - 📍 **Sede**: [Via Pietro Baiardi 4, Torino](https://www.google.com/maps/search/?api=1&query=Via+Pietro+Baiardi+4,+Torino)
 - 🏐 **UISP Torino**: [Pallavolo Piemonte](https://sites.google.com/view/uisppallavolopiemonte/home-page)
-- 📊 **Classifica Master 4+2 Prima Fase**: [Google Sheets](https://docs.google.com/spreadsheets/d/1Qv6MMun296lM_X_Bm3g9U8uy9zsjly3C/edit?gid=1144088727)
-  - 📊 **Classifica Master 4+2 Play-Off**: [Google Sheets](https://docs.google.com/spreadsheets/d/1E4rgo1nEm_X4tOw2fVAN7O2_KGlmvKik/edit?gid=190893738#gid=190893738)
-- 📊 **Classifica Open 3×3 Prima Fase**: [Google Sheets](https://docs.google.com/spreadsheets/d/17hDPCNtiHUIJ-zQ4FyDCoJFfjy9j5U8g/edit?gid=792185880)
-  - 📊 **Classifica Open 3×3 Coppa Primavera A**: [Google Sheets](https://docs.google.com/spreadsheets/d/1GLyeE0FYMDywz-4zp6HaHAN_0yDQXLEX/edit?gid=1047000272#gid=1047000272)
+- 📊 **Master 4+2 Misto 26/27**: [Calendario e risultati](https://docs.google.com/spreadsheets/d/1sNELIWvG3DkCs9S2wg7vZIwYrUO4UBhT/edit?gid=1144088727#gid=1144088727)
+- 📊 **Open 3×3 Misto 26/27 (girone B)**: [Calendario e risultati](https://drive.google.com/file/d/1_YV3W9SB6Xv4p-vjLuHUDiEVyQ8WDCxQ/view)
+- 🏐 **Italian Volley League – I Sifoni**: [Calendario squadra](https://ivl.usacli.it/CalendarioView?girone_id=null&territorio_id=1&campionato_id=null&inizio_stagione=2026-09-01T00:00:00.000Z&fine_stagione=2027-08-31T00:00:00.000Z&societa_id=null&squadra_id=1200) · [Regolamenti IVL Piemonte](https://ivl.usacli.it/regolamentiterritorio/1)
 
 ---
 
