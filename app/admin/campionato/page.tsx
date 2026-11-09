@@ -345,6 +345,59 @@ export default function AdminCampionatoPage() {
       );
     }
 
+    const cleanName = (name: string) =>
+      name.replace("ASD ", "").replace("Patr.", "P.");
+
+    // Scheda partita per mobile (al posto della tabella)
+    const MatchCardMobile = ({
+      match,
+      played,
+    }: {
+      match: Match;
+      played: boolean;
+    }) => (
+      <div className="rounded-lg border bg-white p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">
+              {formatDate(match.data)}
+              {!played && match.ora ? ` · ${match.ora}` : ""}
+              {" · "}
+              <span className="font-mono">#{match.numero_gara}</span>
+            </p>
+            <div className="mt-1 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-sm font-medium">
+              <span className="break-words">{cleanName(match.squadra_a)}</span>
+              <span className="text-right font-bold">
+                {played ? match.set_a_vinti : ""}
+              </span>
+              <span className="break-words">{cleanName(match.squadra_b)}</span>
+              <span className="text-right font-bold">
+                {played ? match.set_b_vinti : ""}
+              </span>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openDetailsDialog(match)}
+              title="Modifica data/ora/luogo"
+            >
+              <CalendarCog className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEditDialog(match)}
+              title={played ? "Modifica risultato" : "Inserisci risultato"}
+            >
+              <Swords className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+
     // Partite da giocare: senza risultato (la data è irrilevante - anche tavolino senza data ha risultato)
     const upcoming = matches.filter((m) => !hasResult(m));
     // Partite giocate: hanno risultato (anche a tavolino senza data)
@@ -380,73 +433,104 @@ export default function AdminCampionatoPage() {
               Nessuna partita in programma
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-24 hidden sm:table-cell">N° Gara</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Squadra A</TableHead>
-                  <TableHead className="text-center w-16 hidden sm:table-cell">vs</TableHead>
-                  <TableHead>Squadra B</TableHead>
-                  <TableHead className="hidden sm:table-cell">Ora</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile: schede */}
+              <div className="md:hidden space-y-2">
                 {sortedUpcoming.slice(0, 20).map((match) => (
-                  <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
-                      {match.numero_gara}
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm">{formatDate(match.data)}</TableCell>
-                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
-                      {match.squadra_a
-                        .replace("ASD ", "")
-                        .replace("Patr.", "P.")}
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground hidden sm:table-cell">
-                      -
-                    </TableCell>
-                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
-                      {match.squadra_b
-                        .replace("ASD ", "")
-                        .replace("Patr.", "P.")}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{match.ora || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-0 sm:gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDetailsDialog(match)}
-                          title="Modifica data/ora/luogo"
-                        >
-                          <CalendarCog className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(match)}
-                          title="Inserisci risultato"
-                        >
-                          <Swords className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <MatchCardMobile
+                    key={match.id}
+                    match={match}
+                    played={false}
+                  />
                 ))}
                 {sortedUpcoming.length > 20 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center text-muted-foreground"
-                    >
-                      ... e altre {sortedUpcoming.length - 20} partite
-                    </TableCell>
-                  </TableRow>
+                  <p className="text-center text-sm text-muted-foreground pt-1">
+                    ... e altre {sortedUpcoming.length - 20} partite
+                  </p>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop: tabella */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-24 hidden sm:table-cell">
+                        N° Gara
+                      </TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Squadra A</TableHead>
+                      <TableHead className="text-center w-16 hidden sm:table-cell">
+                        vs
+                      </TableHead>
+                      <TableHead>Squadra B</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        Ora
+                      </TableHead>
+                      <TableHead className="text-right">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedUpcoming.slice(0, 20).map((match) => (
+                      <TableRow key={match.id}>
+                        <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
+                          {match.numero_gara}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          {formatDate(match.data)}
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-normal min-w-[90px]">
+                          {match.squadra_a
+                            .replace("ASD ", "")
+                            .replace("Patr.", "P.")}
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground hidden sm:table-cell">
+                          -
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-normal min-w-[90px]">
+                          {match.squadra_b
+                            .replace("ASD ", "")
+                            .replace("Patr.", "P.")}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {match.ora || "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-0 sm:gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openDetailsDialog(match)}
+                              title="Modifica data/ora/luogo"
+                            >
+                              <CalendarCog className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(match)}
+                              title="Inserisci risultato"
+                            >
+                              <Swords className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {sortedUpcoming.length > 20 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center text-muted-foreground"
+                        >
+                          ... e altre {sortedUpcoming.length - 20} partite
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </div>
 
@@ -461,63 +545,79 @@ export default function AdminCampionatoPage() {
               Nessuna partita giocata
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-24 hidden sm:table-cell">N° Gara</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Squadra A</TableHead>
-                  <TableHead className="text-center">Risultato</TableHead>
-                  <TableHead>Squadra B</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile: schede */}
+              <div className="md:hidden space-y-2">
                 {sortedPlayed.map((match) => (
-                  <TableRow key={match.id}>
-                    <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
-                      {match.numero_gara}
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm">{formatDate(match.data)}</TableCell>
-                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
-                      {match.squadra_a
-                        .replace("ASD ", "")
-                        .replace("Patr.", "P.")}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="font-bold text-lg">
-                        {match.set_a_vinti} - {match.set_b_vinti}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-medium whitespace-normal min-w-[90px]">
-                      {match.squadra_b
-                        .replace("ASD ", "")
-                        .replace("Patr.", "P.")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-0 sm:gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDetailsDialog(match)}
-                          title="Modifica data/ora/luogo"
-                        >
-                          <CalendarCog className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(match)}
-                          title="Modifica risultato"
-                        >
-                          <Swords className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <MatchCardMobile key={match.id} match={match} played />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop: tabella */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-24 hidden sm:table-cell">
+                        N° Gara
+                      </TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Squadra A</TableHead>
+                      <TableHead className="text-center">Risultato</TableHead>
+                      <TableHead>Squadra B</TableHead>
+                      <TableHead className="text-right">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedPlayed.map((match) => (
+                      <TableRow key={match.id}>
+                        <TableCell className="font-mono text-sm font-medium hidden sm:table-cell">
+                          {match.numero_gara}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          {formatDate(match.data)}
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-normal min-w-[90px]">
+                          {match.squadra_a
+                            .replace("ASD ", "")
+                            .replace("Patr.", "P.")}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-bold text-lg">
+                            {match.set_a_vinti} - {match.set_b_vinti}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-normal min-w-[90px]">
+                          {match.squadra_b
+                            .replace("ASD ", "")
+                            .replace("Patr.", "P.")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-0 sm:gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openDetailsDialog(match)}
+                              title="Modifica data/ora/luogo"
+                            >
+                              <CalendarCog className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(match)}
+                              title="Modifica risultato"
+                            >
+                              <Swords className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -538,7 +638,9 @@ export default function AdminCampionatoPage() {
             </Link>
             <div className="flex items-center gap-2">
               <Trophy className="w-6 h-6 text-orange-600" />
-              <h1 className="text-xl sm:text-2xl font-bold">Gestione Campionato</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                Gestione Campionato
+              </h1>
             </div>
           </div>
         </div>
@@ -615,7 +717,8 @@ export default function AdminCampionatoPage() {
                   </TabsTrigger>
                   <TabsTrigger value="league">
                     <span className="sm:hidden">IVL</span>
-                    <span className="hidden sm:inline">VOLLEY LEAGUE</span>&nbsp;(
+                    <span className="hidden sm:inline">VOLLEY LEAGUE</span>
+                    &nbsp;(
                     {filteredLeagueMatches.length}
                     {searchQuery &&
                     filteredLeagueMatches.length !== leagueMatches.length

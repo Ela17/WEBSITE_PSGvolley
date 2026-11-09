@@ -164,7 +164,9 @@ export default function AdminEventiPage() {
               </Link>
               <div className="flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-green-600" />
-                <h1 className="text-xl sm:text-2xl font-bold">Gestione Eventi</h1>
+                <h1 className="text-xl sm:text-2xl font-bold">
+                  Gestione Eventi
+                </h1>
               </div>
             </div>
             <Link href="/admin/eventi/nuovo">
@@ -203,67 +205,41 @@ export default function AdminEventiPage() {
                 </Link>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Titolo</TableHead>
-                    <TableHead className="hidden md:table-cell">Tipo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="hidden md:table-cell">Luogo</TableHead>
-                    <TableHead className="hidden sm:table-cell">Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile: schede */}
+                <div className="md:hidden space-y-2">
                   {eventi.map((evento) => {
                     const config = typeConfig[evento.type] || typeConfig.altro;
                     const Icon = config.icon;
                     const past = isPast(evento);
 
                     return (
-                      <TableRow key={evento.id}>
-                        <TableCell>
-                          <div className="max-w-[120px] sm:max-w-xs">
-                            <p className="font-medium truncate">
+                      <div
+                        key={evento.id}
+                        className="rounded-lg border bg-white p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium break-words">
                               {evento.title}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              /{evento.slug}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge className={`${config.color} text-white`}>
-                            <Icon className="w-3 h-3 mr-1" />
-                            {config.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs sm:text-sm">{formatDate(evento.date)}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <span className="text-sm text-muted-foreground truncate block max-w-[150px]">
-                            {evento.location || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant={past ? "secondary" : "default"}>
-                            {past ? "Passato" : "Futuro"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-0 sm:gap-2">
-                            <Link
-                              href={`/eventi/${evento.slug}`}
-                              target="_blank"
-                              className="hidden sm:block"
-                            >
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                title="Visualizza"
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>{formatDate(evento.date)}</span>
+                              <Badge
+                                className={`${config.color} text-white text-[10px] px-1.5 py-0`}
                               >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </Link>
+                                <Icon className="w-3 h-3 mr-1" />
+                                {config.label}
+                              </Badge>
+                              <Badge
+                                variant={past ? "secondary" : "default"}
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                {past ? "Passato" : "Futuro"}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 items-center">
                             <Link href={`/admin/eventi/${evento.slug}`}>
                               <Button
                                 variant="ghost"
@@ -283,12 +259,111 @@ export default function AdminEventiPage() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop: tabella */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Titolo</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Tipo
+                        </TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Luogo
+                        </TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                          Stato
+                        </TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {eventi.map((evento) => {
+                        const config =
+                          typeConfig[evento.type] || typeConfig.altro;
+                        const Icon = config.icon;
+                        const past = isPast(evento);
+
+                        return (
+                          <TableRow key={evento.id}>
+                            <TableCell>
+                              <div className="max-w-[120px] sm:max-w-xs">
+                                <p className="font-medium truncate">
+                                  {evento.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  /{evento.slug}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <Badge className={`${config.color} text-white`}>
+                                <Icon className="w-3 h-3 mr-1" />
+                                {config.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">
+                              {formatDate(evento.date)}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <span className="text-sm text-muted-foreground truncate block max-w-[150px]">
+                                {evento.location || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant={past ? "secondary" : "default"}>
+                                {past ? "Passato" : "Futuro"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-0 sm:gap-2">
+                                <Link
+                                  href={`/eventi/${evento.slug}`}
+                                  target="_blank"
+                                  className="hidden sm:block"
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Visualizza"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                                <Link href={`/admin/eventi/${evento.slug}`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Modifica"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Elimina"
+                                  onClick={() => setDeleteSlug(evento.slug)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
